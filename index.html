@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🐹 ねずみのほっこりルーム Pixel Premium</title>
+    <title>🐹 ねずみのほっこりルーム Premium Pixel</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body {
@@ -145,7 +145,7 @@
         start: {
             text: "「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」",
             options: [
-                { text: "「今日の調子はどう？」", next: "condition" },
+                { text: "正式な調子はどう？」", next: "condition" },
                 { text: "「好きな食べ物は？」", next: "food" }
             ]
         },
@@ -169,135 +169,162 @@
             options: [{ text: "「ありがとう！」", next: "start" }]
         },
         sweet: {
-            text: "「お菓子！いいよねぇ、クッキーのひとかけらでもボクにとっては大ごちそうなんだ！」",
+            text: "「お菓子！いいよねぇ、クッキーのひとかけらでもボクにとっては大ごちそうんだ！」",
             loveBonus: 8,
             state: 'happy',
             options: [{ text: "「今度分けてあげるね」", next: "start" }]
         }
     };
 
-    // 💡 ドットの粒を揃えて描画するピクセル補助関数
-    function drawPixelBlock(x, y, w, h, color) {
+    // 💡 緻密なピクセルアートを1マス（ドット）単位で精密に制御する関数
+    function p(x, y, color) {
         ctx.fillStyle = color;
-        ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
+        ctx.fillRect(Math.round(x), Math.round(y), 2, 2); // 1ピクセル＝2x2サイズでくっきり描写
     }
 
-    function drawPixelNezumi() {
+    // 💡 リアルなグラデーションの塊を描く関数
+    function drawBlock(sx, sy, width, height, colorArr) {
+        for(let i=0; i<height; i+=2){
+            let color = colorArr[Math.min(Math.floor(i / colorArr.length), colorArr.length - 1)];
+            ctx.fillStyle = color;
+            ctx.fillRect(Math.round(sx), Math.round(sy + i), Math.round(width), 2);
+        }
+    }
+
+    function drawPremiumRealPixel() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 背景：ドット絵風グラデーションの部屋
+        // 背景：ほっこり暗めの部屋グラデーション
         let roomGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        roomGrad.addColorStop(0, '#10101f');
-        roomGrad.addColorStop(0.65, '#1b1b2f');
-        roomGrad.addColorStop(0.65, '#2b1a11'); // 床
-        roomGrad.addColorStop(1, '#140c08');
+        roomGrad.addColorStop(0, '#101026');
+        roomGrad.addColorStop(0.65, '#1d1d36');
+        roomGrad.addColorStop(0.65, '#261710'); // 木の床
+        roomGrad.addColorStop(1, '#120b07');
         ctx.fillStyle = roomGrad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         const time = Date.now();
-        const breath = Math.round(Math.sin(time / 250) * 2); // 1ピクセル単位の呼吸の上下
+        const breath = Math.sin(time / 240) * 1.5; // リアルな呼吸
 
-        // まばたき
-        blinkTimer++;
-        if (blinkTimer > 100) {
+        if (++blinkTimer > 110) {
             isBlinking = true;
-            if (blinkTimer > 104) { isBlinking = false; blinkTimer = 0; }
+            if (blinkTimer > 114) { isBlinking = false; blinkTimer = 0; }
         }
 
-        const cx = 155;
-        const cy = 115 + breath;
+        // 全体の中心座標
+        const bx = 110;
+        const by = 135 + breath;
 
-        // 1. 独立したピンクのドットしっぽ
-        ctx.strokeStyle = '#ffb3c1';
+        // 1. リアルに美しく伸びる白ピンクのしっぽ（右側にS字に広がる）
+        ctx.strokeStyle = '#f4c2c2';
         ctx.lineWidth = 3;
-        ctx.lineCap = 'square';
+        ctx.lineCap = 'round';
         ctx.beginPath();
-        ctx.moveTo(cx + 15, cy + 35);
-        ctx.quadraticCurveTo(cx + 45, cy + 35, cx + 50, cy + 5 + Math.sin(time/300)*3);
+        ctx.moveTo(bx + 55, by + 10);
+        ctx.bezierCurveTo(bx + 85, by + 15, bx + 100, by - 15, bx + 95, by - 30 + Math.sin(time/350)*4);
         ctx.stroke();
 
-        // 2. 高精細ピクセル耳（3D的な立体シャドウつき）
-        const drawPixelEar = (ex, ey, isLeft) => {
-            // 外枠グレー
-            drawPixelBlock(ex - 15, ey - 15, 30, 30, '#d1d1e0');
-            // シャドウ（影）
-            drawPixelBlock(isLeft ? ex - 12 : ex - 18, ey - 12, 27, 27, '#9e9eb3');
-            // ピンクの内側
-            drawPixelBlock(isLeft ? ex - 9 : ex - 15, ey - 9, 21, 21, '#ffccd5');
-            // 中心ハイライト
-            drawPixelBlock(isLeft ? ex - 6 : ex - 12, ey - 6, 12, 12, '#ffb3c1');
+        // 2. リアルファンシーラット特有の「後ろ足・腿（もも）」の丸み
+        let legColors = ['#e8e8f0', '#dedee8', '#cfcfde'];
+        ctx.beginPath();
+        ctx.fillStyle = '#dedee8';
+        ctx.ellipse(bx + 40, by + 12, 16, 12, Math.PI/6, 0, Math.PI*2);
+        ctx.fill();
+        // ちょこんとした足先
+        ctx.fillStyle = '#ffccd5';
+        ctx.fillRect(bx + 44, by + 22, 10, 4);
+
+        // 3. シュッとした本物らしいリアルな「胴体」（流線型）
+        let bodyColors = ['#ffffff', '#f2f2fa', '#e1e1ed', '#d2d2e3', '#c2c2d6'];
+        for(let i=0; i<36; i+=2) {
+            let color = bodyColors[Math.min(Math.floor(i/7), bodyColors.length-1)];
+            // 前が細く後ろが太いリアルなネズミの体型
+            let w = 45 + (i * 0.4);
+            let offset = i * 0.2;
+            ctx.fillStyle = color;
+            ctx.fillRect(bx + offset, by - 10 + i, w, 2);
+        }
+
+        // 4. 前を向いたリアルに大きな「ピンクのお耳」
+        const drawRealEar = (ex, ey, innerColor, outerColor) => {
+            ctx.fillStyle = outerColor;
+            ctx.beginPath(); ctx.ellipse(ex, ey, 15, 17, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = innerColor;
+            ctx.beginPath(); ctx.ellipse(ex, ey + 1, 11, 13, 0, 0, Math.PI*2); ctx.fill();
+            // 耳の中のリアルな陰影
+            ctx.fillStyle = '#e899a8';
+            ctx.beginPath(); ctx.ellipse(ex - 1, ey + 3, 7, 8, 0, 0, Math.PI*2); ctx.fill();
         };
-        drawPixelEar(cx - 26, cy - 18, true);
-        drawPixelEar(cx + 26, cy - 18, false);
+        drawRealEar(bx + 12, by - 28, '#ffccd5', '#e6e6f2'); // 奥の耳
 
-        // 3. どっしり可愛いおにぎり型の大きな「胴体」
-        // 外枠とメイン毛並み
-        drawPixelBlock(cx - 36, cy + 5, 72, 40, '#e1e1ea');
-        drawPixelBlock(cx - 32, cy, 64, 48, '#f0f0f5');
-        // お腹のハイライト（さらに白いピクセル）
-        drawPixelBlock(cx - 18, cy + 15, 36, 30, '#ffffff');
-        // 下部影
-        drawPixelBlock(cx - 32, cy + 44, 64, 4, '#b8b8c7');
-
-        // 4. まあるい「頭」
-        drawPixelBlock(cx - 24, cy - 16, 48, 32, '#e1e1ea');
-        drawPixelBlock(cx - 22, cy - 14, 44, 28, '#fcfcfc');
-        // 顎の影
-        drawPixelBlock(cx - 20, cy + 10, 40, 3, '#c2c2d6');
-
-        // 5. 完全に独立したくりくりおめめ（絶対に繋がらない！）
-        const eyeX = 12;
-        const eyeY = cy - 4;
-        
-        if (isBlinking || nezumiState === 'sleep') {
-            // パチッと閉じた線目
-            drawPixelBlock(cx - eyeX - 4, eyeY, 8, 2, '#5e5e70');
-            drawPixelBlock(cx + eyeX - 4, eyeY, 8, 2, '#5e5e70');
-        } else if (nezumiState === 'happy') {
-            // にっこり（下向き半月）
-            drawPixelBlock(cx - eyeX - 3, eyeY + 2, 6, 3, '#161626');
-            drawPixelBlock(cx + eyeX - 3, eyeY + 2, 6, 3, '#161626');
-            drawPixelBlock(cx - eyeX - 3, eyeY + 2, 6, 1, '#ffccd5'); // 赤み
-            drawPixelBlock(cx + eyeX - 3, eyeY + 2, 6, 1, '#ffccd5');
-        } else {
-            // 通常のクッキリ四角い大きな黒目（光彩ドット入り）
-            drawPixelBlock(cx - eyeX - 3, eyeY - 3, 6, 6, '#161626');
-            drawPixelBlock(cx + eyeX - 3, eyeY - 3, 6, 6, '#161626');
-            // 白い輝きドット
-            drawPixelBlock(cx - eyeX - 2, eyeY - 2, 2, 2, '#ffffff');
-            drawPixelBlock(cx + eyeX - 2, eyeY - 2, 2, 2, '#ffffff');
+        // 5. シュッと横に尖ったリアルな「頭部・顔」
+        let headColors = ['#fcfcfc', '#f5f5fa', '#e6e6f2', '#d7d7eb'];
+        for(let i=0; i<24; i+=2) {
+            let color = headColors[Math.min(Math.floor(i/6), headColors.length-1)];
+            // 横向きに尖らせるための計算
+            let w = 24 + i;
+            let hOffset = i * 0.6;
+            ctx.fillStyle = color;
+            ctx.fillRect(bx - 12 + hOffset, by - 18 + i, w, 2);
         }
 
-        // 6. ピンクの可愛いマズルと鼻
-        drawPixelBlock(cx - 2, cy + 1, 4, 3, '#ff85a1'); // 鼻
-        drawPixelBlock(cx - 4, cy + 4, 8, 2, '#e1e1ea'); // ひげ袋
+        drawRealEar(bx + 26, by - 24, '#ffccd5', '#f5f5fa'); // 手前の耳
 
-        // 7. シャープなひげ（ドットのドットらしいハッキリした線）
-        ctx.strokeStyle = 'rgba(180, 180, 200, 0.5)';
-        ctx.lineWidth = 1;
+        // 6. 横顔に位置する本物らしい「黒い瞳」
+        const ey = by - 7;
+        const ex = bx + 16;
+        if (isBlinking || nezumiState === 'sleep') {
+            ctx.strokeStyle = '#7a7a8a';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(ex - 3, ey); ctx.lineTo(ex + 3, ey); ctx.stroke();
+        } else if (nezumiState === 'happy') {
+            ctx.strokeStyle = '#11111a';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(ex, ey + 1, 3, Math.PI, 0, false); ctx.stroke();
+        } else {
+            // くりくりしたリアルな黒目
+            ctx.fillStyle = '#11111a';
+            ctx.beginPath(); ctx.arc(ex, ey, 4, 0, Math.PI*2); ctx.fill();
+            // リアルなハイライト（輝き）
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.arc(ex - 1, ey - 1, 1.2, 0, Math.PI*2); ctx.fill();
+        }
+
+        // 7. 尖った鼻先（ピンク色）
+        ctx.fillStyle = '#ff9ebb';
+        ctx.fillRect(bx - 14, by + 2, 4, 3);
+        
+        // リアルに流れる非常に細いお髭
+        ctx.strokeStyle = 'rgba(210, 210, 230, 0.4)';
+        ctx.lineWidth = 0.8;
         ctx.beginPath();
-        ctx.moveTo(cx - 6, cy + 3); ctx.lineTo(cx - 32, cy + 2);
-        ctx.moveTo(cx - 6, cy + 5); ctx.lineTo(cx - 34, cy + 8);
-        ctx.moveTo(cx + 6, cy + 3); ctx.lineTo(cx + 32, cy + 2);
-        ctx.moveTo(cx + 6, cy + 5); ctx.lineTo(cx + 34, cy + 8);
+        let piku = Math.sin(time / 60) * 0.8;
+        ctx.moveTo(bx - 10, by + 3); ctx.lineTo(bx - 32, by - 1 + piku);
+        ctx.moveTo(bx - 10, by + 4); ctx.lineTo(bx - 35, by + 5 - piku);
+        ctx.moveTo(bx - 10, by + 5); ctx.lineTo(bx - 30, by + 11 + piku);
         ctx.stroke();
 
-        // 8. ちょこんとした手足
-        drawPixelBlock(cx - 28, cy + 45, 8, 4, '#ffccd5'); // 左足
-        drawPixelBlock(cx + 20, cy + 45, 8, 4, '#ffccd5'); // 右足
-
+        // 8. ちょこんとした可愛い「手元（前足）」
+        ctx.fillStyle = '#ffccd5';
         if (nezumiState === 'eating') {
-            // 黄色いピクセルチーズ
-            drawPixelBlock(cx - 6, cy + 16, 12, 10, '#ffb703');
-            drawPixelBlock(cx - 2, cy + 18, 2, 2, '#fb8500'); // 穴
-            // チーズを掴む手
-            drawPixelBlock(cx - 8, cy + 18, 4, 4, '#ffccd5');
-            drawPixelBlock(cx + 4, cy + 18, 4, 4, '#ffccd5');
+            // 黄色いピクセルチーズを抱える
+            ctx.fillStyle = '#ffb703';
+            ctx.fillRect(bx - 2, by + 14, 12, 10);
+            ctx.fillStyle = '#e6a100'; // チーズの穴の影
+            ctx.fillRect(bx + 4, by + 16, 2, 2);
+
+            ctx.fillStyle = '#ffccd5';
+            ctx.fillRect(bx - 4, by + 14, 4, 4);
+            ctx.fillRect(bx + 8, by + 14, 4, 4);
         } else {
-            // 通常の前足
-            drawPixelBlock(cx - 14, cy + 20, 4, 4, '#ffccd5');
-            drawPixelBlock(cx + 10, cy + 20, 4, 4, '#ffccd5');
+            // 通常時のおてて
+            ctx.fillRect(bx + 4, by + 15, 5, 4);
+            ctx.fillRect(bx + 14, by + 15, 4, 4);
         }
+
+        // 地面に接する左足先
+        ctx.fillStyle = '#ffccd5';
+        ctx.fillRect(bx + 8, by + 23, 6, 3);
     }
 
     function showScenario(key) {
@@ -365,7 +392,7 @@
     }
 
     function runLoop() {
-        drawPixelNezumi();
+        drawPremiumRealPixel();
         requestAnimationFrame(runLoop);
     }
 
