@@ -3,157 +3,352 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🐭 ねずみのピクセルアドベンチャー</title>
+    <title>🐹 ねずみのほっこりルーム</title>
     <style>
-        *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-        body{font-family:sans-serif;background:#060614;display:flex;justify-content:center;min-height:100vh;color:#cbd5e0;}
-        #wrap{display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:10px;}
-        #music-bar{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;}
-        .mbtn{font-size:10px;padding:4px 8px;border:0.5px solid #334;border-radius:6px;cursor:pointer;background:transparent;color:#9ab;}
-        .mbtn:hover{background:#111a33;}
-        .mbtn.active{background:#1a2a4a;border-color:#4488cc;color:#88ccff;}
-        #main-row{display:flex;gap:10px;align-items:flex-start;}
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background: #1e1e2f;
+            color: #e0e0ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        #game-container {
+            width: 340px;
+            background: #2a2a40;
+            border: 3px solid #4e4e70;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        /* ステータスバー */
+        #status-bar {
+            display: flex;
+            justify-content: space-between;
+            background: #1a1a2e;
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 12px;
+        }
+        .status-item { display: flex; align-items: center; gap: 4px; }
+        .val { color: #ffb703; font-weight: bold; }
+
+        /* お部屋画面（キャンバス） */
+        #room-viewport {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            background: #3d3d5c;
+            border-radius: 12px;
+            border: 2px solid #1a1a2e;
+            overflow: hidden;
+        }
+        canvas #room-canvas {
+            display: block;
+        }
+
+        /* 会話ウィンドウ */
+        #dialogue-box {
+            background: #1a1a2e;
+            border: 2px solid #4e4e70;
+            border-radius: 12px;
+            padding: 12px;
+            min-height: 75px;
+        }
+        #speaker-name {
+            font-size: 11px;
+            color: #88ccff;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        #dialogue-text {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #ffffff;
+        }
+
+        /* 選択肢・アクションエリア */
+        #action-area {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .btn {
+            background: #4e4e70;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            text-align: left;
+            transition: background 0.2s;
+        }
+        .btn:hover { background: #64648c; }
+        .btn:active { background: #3a3a54; }
         
-        #adventure-wrap{position:relative;display:inline-block;width:220px;height:440px;border:0.5px solid #334;border-radius:6px;background:#0a0a2e;}
-        canvas#board{display:block;}
-        #pause-overlay{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,15,0.75);border-radius:6px;align-items:center;justify-content:center;flex-direction:column;gap:8px;}
-        #pause-overlay.show{display:flex;}
-        #pause-overlay p{color:#eef;font-size:16px;font-weight:500;}
-        #pause-overlay span{color:#7788aa;font-size:11px;}
-        
-        #left-side{display:flex;flex-direction:column;gap:4px;width:72px;}
-        .stat{background:#111a33;border-radius:6px;padding:4px 7px;}
-        .stat-label{font-size:9px;color:#7788aa;margin-bottom:1px;}
-        .stat-val{font-size:16px;font-weight:500;color:#eef;}
-        #nezumi-icon{width:50px;height:50px;border:0.5px solid #334;border-radius:10px;background:#111a33;display:flex;align-items:center;justify-content:center;font-size:28px;}
-        #item-list{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-top:2px;}
-        .item-slot{width:22px;height:22px;border:0.5px solid #334;border-radius:4px;background:#111a33;display:flex;align-items:center;justify-content:center;font-size:12px;color:#7788aa;}
-        
-        #right-side{display:flex;flex-direction:column;gap:4px;width:72px;}
-        canvas#next-canvas{border:0.5px solid #334;border-radius:6px;display:block;background:#0a0a2e;}
-        .sbtn{width:72px;font-size:10px;padding:5px 0;border:0.5px solid #334;border-radius:6px;cursor:pointer;background:transparent;color:#ccd;text-align:center;}
-        .sbtn:hover{background:#111a33;}
-        .sbtn.active{background:#1a2a4a;border-color:#4466aa;color:#aaddff;}
-        
-        #bottom{display:flex;flex-direction:column;align-items:center;gap:5px;width:100%;}
-        #speed-row{display:flex;align-items:center;gap:5px;}
-        #speed-row label{font-size:10px;color:#7788aa;}
-        #speed-val{font-size:10px;color:#aaddff;min-width:34px;}
-        input[type=range]{width:70px;}
-        
-        #controls{display:flex;align-items:center;justify-content:space-between;width:100%;margin:0 auto;max-width:320px;gap:0;}
-        .crow{display:flex;flex-direction:column;gap:5px;align-items:center;}
-        .cbtn{width:54px;height:54px;border:0.5px solid #334;border-radius:10px;background:#111a33;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;user-select:none;color:#eef;}
-        .cbtn:active{background:#1a2a4a;border-color:#4466aa;}
-        #btn-shot{width:54px;height:114px;font-size:12px;font-weight:500;letter-spacing:1px;}
-        
-        /* 💡 会話エリアのスタイル調整 */
-        #talk-area{display:flex;gap:8px;align-items:flex-start;width:100%;max-width:320px;margin-top:5px;background:#111a33;padding:8px;border-radius:8px;border:0.5px solid #334;}
-        #talk-window{flex-grow:1;display:flex;flex-direction:column;gap:6px;}
-        #talk-text{font-size:11px;color:#eef;line-height:1.4;min-height:32px;}
-        #talk-options{display:grid;grid-template-columns:1fr;gap:4px;}
-        .talk-opt-btn{font-size:11px;padding:6px;border:0.5px solid #334;border-radius:4px;cursor:pointer;background:#1a2a4a;color:#88ccff;text-align:left;}
-        .talk-opt-btn:hover{background:#253b6e;}
+        .action-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .act-btn {
+            text-align: center;
+            background: #ffb703;
+            color: #1e1e2f;
+            font-weight: bold;
+        }
+        .act-btn:hover { background: #ffc947; }
     </style>
 </head>
 <body>
-<div id="wrap">
-    <div id="music-bar">
-        <button class="mbtn active" id="m0">🎵 ポップ</button>
-        <button class="mbtn" id="m1">🎸 ロック</button>
-        <button class="mbtn" id="m2">🌙 チル</button>
-        <button class="mbtn" id="m3">🎹 クラシック</button>
-        <button class="mbtn" id="m4">🔇 なし</button>
+
+<div id="game-container">
+    <div id="status-bar">
+        <div class="status-item">🤝 なかよし度: <span id="love-val" class="val">10</span></div>
+        <div class="status-item">🧀 チーズの数: <span id="cheese-val" class="val">3</span></div>
     </div>
-    <div id="main-row">
-        <div id="left-side">
-            <div id="nezumi-icon">🐭</div>
-            <div class="stat"><div class="stat-label">好感度</div><div class="stat-val" id="love">0</div></div>
-            <div class="stat"><div class="stat-label">Lv</div><div class="stat-val" id="level">1</div></div>
-            <div class="stat"><div class="stat-label">ライン</div><div class="stat-val" id="lines">0</div></div>
-            <div style="font-size:9px;color:#7788aa;text-align:center;">アイテム</div>
-            <div id="item-list">
-                <div class="item-slot">🧀</div>
-                <div class="item-slot">🔑</div>
-                <div class="item-slot">🪓</div>
-                <div class="item-slot">🧣</div>
-                <div class="item-slot"></div>
-                <div class="item-slot"></div>
-            </div>
-        </div>
-        <div id="adventure-wrap">
-            <canvas id="board" width="220" height="440"></canvas>
-            <div id="pause-overlay">
-                <p>⏸ PAUSE</p>
-                <span>もう一度タップで再開</span>
-            </div>
-        </div>
-        <div id="right-side">
-            <div style="font-size:9px;color:#7788aa;text-align:center;">つぎ</div>
-            <canvas id="next-canvas" width="70" height="70"></canvas>
-            <button id="startbtn" class="sbtn">スタート🐭</button>
-            <button id="pausebtn" class="sbtn">⏸ 一時停止</button>
-            <button id="mutebtn" class="sbtn">🔊 音あり</button>
-            <button id="speedbtn" class="sbtn active">⚡ 加速あり</button>
-        </div>
+
+    <div id="room-viewport">
+        <canvas id="room-canvas" width="306" height="200"></canvas>
     </div>
-    <div id="bottom">
-        <div id="speed-row">
-            <label>速度</label>
-            <input type="range" id="speed-slider" min="1" max="5" step="1" value="3">
-            <span id="speed-val">ふつう</span>
-        </div>
-        <div id="controls">
-            <div class="cbtn" id="btn-shot">SHOT!</div>
-            <div class="crow">
-                <div class="cbtn" id="btn-rotate">↻</div>
-                <div style="display:flex;gap:5px;">
-                    <div class="cbtn" id="btn-left">←</div>
-                    <div class="cbtn" id="btn-down">⬇</div>
-                    <div class="cbtn" id="btn-right">→</div>
-                </div>
+
+    <div id="dialogue-box">
+        <div id="speaker-name">ネズミ</div>
+        <div id="dialogue-text">「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」</div>
+    </div>
+
+    <div id="action-area">
+        <div id="options-container" style="display: flex; flex-direction: column; gap: 6px;">
             </div>
-        </div>
-        <div id="talk-area">
-            <div id="talk-window">
-                <div id="talk-text">ネズミ「こんにちは！ここから先はパズルを解いて進むんだって。一緒にがんばってくれる？」</div>
-                <div id="talk-options">
-                    <button class="talk-opt-btn" onclick="talk(1)">「もちろん！任せて！」</button>
-                    <button class="talk-opt-btn" onclick="talk(2)">「足手まといにならないでよ？」</button>
-                </div>
-            </div>
+        <div class="action-row">
+            <button class="btn act-btn" onclick="giveCheese()">🧀 チーズをあげる</button>
+            <button class="btn act-btn" onclick="strokeHead()">👋 なでなでする</button>
         </div>
     </div>
 </div>
-<script>
-    const C=document.getElementById('board'); const ctx=C.getContext('2d'); const NC=document.getElementById('next-canvas'); const nctx=NC.getContext('2d'); const SZ=22,COLS=10,ROWS=20; const EMOJIS=['🐭','🐹','🐱','🐻','🐼','🐨','🐸']; const PIECES=[[[1,1,1,1]],[[1,1],[1,1]],[[0,1,0],[1,1,1]],[[1,0,0],[1,1,1]],[[0,0,1],[1,1,1]],[[1,1,0],[0,1,1]],[[0,1,1],[1,1,0]]]; const PART_COLORS=['#ff6eb4','#ffe066','#66eaff','#a3ff66','#ff9f66','#c966ff','#66ffcc']; const SPEED_LABELS=['おそい','ゆっくり','ふつう','はやい','爆速']; const BASE_SPEEDS=[800,600,400,250,120]; let board,cur,curX,curY,next,score=0,love=0,level=1,lines=0,running=false,paused=false,loop,animId; let muted=false,accelOn=true,audioCtx=null; let particles=[],flashLines=[],flashAlpha=0; let musicMode=0,baseSpeed=400,musicSeq=null; const speedSlider=document.getElementById('speed-slider'); const speedValEl=document.getElementById('speed-val'); speedSlider.addEventListener('input',()=>{const v=parseInt(speedSlider.value)-1;speedValEl.textContent=SPEED_LABELS[v];baseSpeed=BASE_SPEEDS[v];if(running&&!paused){clearInterval(loop);loop=setInterval(drop,currentSpeed());}}); function currentSpeed(){return accelOn?Math.max(60,baseSpeed-level*30):baseSpeed;} document.getElementById('speedbtn').addEventListener('click',()=>{accelOn=!accelOn;const btn=document.getElementById('speedbtn');btn.textContent=accelOn?'⚡ 加速あり':'🐢 加速なし';btn.classList.toggle('active',accelOn);if(running&&!paused){clearInterval(loop);loop=setInterval(drop,currentSpeed());}}); function togglePause(){if(!running)return;paused=!paused;const btn=document.getElementById('pausebtn');const overlay=document.getElementById('pause-overlay');if(paused){clearInterval(loop);stopMusic();btn.textContent='▶ 再開';btn.classList.add('active');overlay.classList.add('show');}else{loop=setInterval(drop,currentSpeed());if(musicMode<4&&!muted)playMusic();btn.textContent='⏸ 一時停止';btn.classList.remove('active');overlay.classList.remove('show');}} document.getElementById('pausebtn').addEventListener('click',togglePause); document.getElementById('pause-overlay').addEventListener('click',togglePause); function getAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;} const MUSIC_THEMES=[{notes:[523,659,784,1047,784,659,523,440,523,659,523,392],tempo:200,type:'triangle'},{notes:[220,220,330,220,277,220,330,247,220,220,310,220],tempo:160,type:'sawtooth'},{notes:[294,330,392,440,392,330,294,262,294,330,392,349],tempo:350,type:'sine'},{notes:[392,440,494,523,494,440,392,349,392,440,494,440],tempo:280,type:'triangle'}]; function stopMusic(){if(musicSeq)clearTimeout(musicSeq);musicSeq=null;} function playMusic(){stopMusic();if(muted||musicMode===4||!running||paused)return;const theme=MUSIC_THEMES[musicMode];let i=0;function n(){if(!running||paused||muted||musicMode===4)return;try{const ac=getAudio();const o=ac.createOscillator();const g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type=theme.type;o.frequency.setValueAtTime(theme.notes[i%theme.notes.length],ac.currentTime);g.gain.setValueAtTime(0.06,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+theme.tempo/1000*0.85);o.start(ac.currentTime);o.stop(ac.currentTime+theme.tempo/1000);}catch(e){}i++;musicSeq=setTimeout(n,theme.tempo);}n();} function playTone(freq,dur,type,vol){if(muted)return;try{const ac=getAudio();const o=ac.createOscillator();const g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type=type||'sine';o.frequency.setValueAtTime(freq,ac.currentTime);g.gain.setValueAtTime(vol||0.15,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+dur);o.start(ac.currentTime);o.stop(ac.currentTime+dur);}catch(e){}} function soundMove(){playTone(220,0.06,'square',0.08);} function soundRotate(){playTone(330,0.08,'sine',0.1);} function soundLock(){playTone(180,0.1,'triangle',0.12);} function soundClear(n){const f=[0,440,520,620,780];playTone(f[n]||440,0.25,'sine',0.18);if(n>=2)setTimeout(()=>playTone((f[n]||440)*1.25,0.18,'sine',0.14),100);if(n>=4)setTimeout(()=>playTone((f[n]||440)*1.5,0.2,'sine',0.16),200);} function soundOver(){[330,280,230,180].forEach((f,i)=>setTimeout(()=>playTone(f,0.18,'sawtooth',0.1),i*100));} document.getElementById('mutebtn').addEventListener('click',()=>{muted=!muted;document.getElementById('mutebtn').textContent=muted?'🔇 音なし':'🔊 音あり';if(muted){stopMusic();}else{try{getAudio();}catch(e){}if(running&&!paused)playMusic();}}); [0,1,2,3,4].forEach(i=>{document.getElementById('m'+i).addEventListener('click',()=>{document.querySelectorAll('.mbtn').forEach(b=>b.classList.remove('active'));document.getElementById('m'+i).classList.add('active');musicMode=i;if(running&&!paused){stopMusic();if(musicMode<4&&!muted)playMusic();}});}); const emojiCache={}; function getEmojiImg(em){if(emojiCache[em])return emojiCache[em];const cv=document.createElement('canvas');cv.width=SZ;cv.height=SZ;const c=cv.getContext('2d');c.font=`${SZ-2}px serif`;c.textAlign='center';c.textBaseline='middle';c.fillText(em,SZ/2,SZ/2+1);emojiCache[em]=cv;return cv;} function newBoard(){return Array.from({length:ROWS},()=>Array(COLS).fill(null));} function randPiece(){const i=Math.floor(Math.random()*PIECES.length);return{shape:PIECES[i].map(r=>[...r]),em:EMOJIS[i]};} function spawnParticles(rows){rows.forEach(r=>{for(let cc=0;cc<COLS;cc++){const x=cc*SZ+SZ/2,y=r*SZ+SZ/2;for(let p=0;p<6;p++){const a=Math.random()*Math.PI*2,sp=1.5+Math.random()*3.5;particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,decay:0.025+Math.random()*0.03,size:3+Math.random()*5,color:PART_COLORS[Math.floor(Math.random()*PART_COLORS.length)],shape:Math.random()<0.5?'circle':'star'});}}});} function drawStar(c,x,y,r,color,alpha){c.save();c.globalAlpha=alpha;c.fillStyle=color;c.beginPath();for(let i=0;i<5;i++){const a=Math.PI*2*i/5-Math.PI/2,a2=Math.PI*2*(i+0.5)/5-Math.PI/2;i===0?c.moveTo(x+Math.cos(a)*r,y+Math.sin(a)*r):c.lineTo(x+Math.cos(a)*r,y+Math.sin(a)*r);c.lineTo(x+Math.cos(a2)*r*0.45,y+Math.sin(a2)*r*0.45);}c.closePath();c.fill();c.restore();} function drawCell(c,px,py,em,alpha){c.save();if(alpha!=null)c.globalAlpha=alpha;c.drawImage(getEmojiImg(em),px,py,SZ,SZ);c.restore();} function draw(){ctx.fillStyle='#0a0a2e';ctx.fillRect(0,0,C.width,C.height);ctx.strokeStyle='#151535';ctx.lineWidth=0.5;for(let r=0;r<ROWS;r++){ctx.beginPath();ctx.moveTo(0,r*SZ);ctx.lineTo(C.width,r*SZ);ctx.stroke();}for(let cc=0;cc<COLS;cc++){ctx.beginPath();ctx.moveTo(cc*SZ,0);ctx.lineTo(cc*SZ,C.height);ctx.stroke();}for(let r=0;r<ROWS;r++)for(let cc=0;cc<COLS;cc++){if(board[r][cc])drawCell(ctx,cc*SZ,r*SZ,board[r][cc]);}if(flashAlpha>0&&flashLines.length){ctx.save();ctx.globalAlpha=flashAlpha*0.5;ctx.fillStyle='#ffffff';flashLines.forEach(r=>ctx.fillRect(0,r*SZ,C.width,SZ));ctx.restore();flashAlpha-=0.07;}if(cur){let ghost=curY;while(valid(cur.shape,curX,ghost+1))ghost++;cur.shape.forEach((row,r)=>row.forEach((v,cc)=>{if(v)drawCell(ctx,(curX+cc)*SZ,(ghost+r)*SZ,cur.em,0.2);}));cur.shape.forEach((row,r)=>row.forEach((v,cc)=>{if(v)drawCell(ctx,(curX+cc)*SZ,(curY+r)*SZ,cur.em,1);}));}particles=particles.filter(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.12;p.life-=p.decay;if(p.life<=0)return false;if(p.shape==='star')drawStar(ctx,p.x,p.y,p.size,p.color,p.life);else{ctx.save();ctx.globalAlpha=p.life;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.size/2,0,Math.PI*2);ctx.fill();ctx.restore();}return true;});} function drawNext(){nctx.fillStyle='#0a0a2e';nctx.fillRect(0,0,NC.width,NC.height);if(!next)return;const offX=Math.floor((4-next.shape[0].length)/2)*SZ+1;const offY=Math.floor((4-next.shape.length)/2)*SZ+1;next.shape.forEach((row,r)=>row.forEach((v,cc)=>{if(v)drawCell(nctx,offX+cc*SZ,offY+r*SZ,next.em,1);}));} function valid(shape,x,y){return shape.every((row,r)=>row.every((v,cc)=>{if(!v)return true;const nx=x+cc,ny=y+r;return nx>=0&&nx<COLS&&ny<ROWS&&(ny<0||!board[ny][nx]);}));} function rotate(shape){return shape[0].map((_,i)=>shape.map(r=>r[i]).reverse());} function lock(){cur.shape.forEach((row,r)=>row.forEach((v,cc)=>{if(v&&curY+r>=0)board[curY+r][curX+cc]=cur.em;}));soundLock();clearLines();cur=next;next=randPiece();curX=Math.floor(COLS/2)-Math.floor(cur.shape[0].length/2);curY=0;if(!valid(cur.shape,curX,curY)){gameOver();return;}drawNext();} function clearLines(){let cleared=[];for(let r=ROWS-1;r>=0;r--){if(board[r].every(v=>v))cleared.push(r);}if(cleared.length){spawnParticles(cleared);flashLines=cleared;flashAlpha=1;soundClear(cleared.length);cleared.forEach(r=>{board.splice(r,1);board.unshift(Array(COLS).fill(null));});score+=cleared.length*100;lines+=cleared.length;level=Math.floor(lines/10)+1;document.getElementById('level').textContent=level;document.getElementById('lines').textContent=lines;if(cleared.length>=2){love+=cleared.length*5;document.getElementById('love').textContent=love;triggerNezumiTalk("わあ！すごい！いっぱい消えたね！");}clearInterval(loop);loop=setInterval(drop,currentSpeed());}} function gameLoop(){draw();animId=requestAnimationFrame(gameLoop);} function drop(){if(!running||paused)return;if(valid(cur.shape,curX,curY+1)){curY++;}else{lock();}} function gameOver(){running=false;paused=false;clearInterval(loop);stopMusic();soundOver();document.getElementById('pause-overlay').classList.remove('show');document.getElementById('pausebtn').textContent='⏸ 一時停止';document.getElementById('pausebtn').classList.remove('active');triggerNezumiTalk("あちゃー、やられちゃった…次こそがんばろう！");document.getElementById('startbtn').textContent='もう一度🐭';} function start(){board=newBoard();lines=0;particles=[];flashLines=[];flashAlpha=0;paused=false;document.getElementById('level').textContent=1;document.getElementById('lines').textContent=0;document.getElementById('pause-overlay').classList.remove('show');document.getElementById('pausebtn').textContent='⏸ 一時停止';document.getElementById('pausebtn').classList.remove('active');next=randPiece();cur=randPiece();curX=Math.floor(COLS/2)-Math.floor(cur.shape[0].length/2);curY=0;running=true;clearInterval(loop);loop=setInterval(drop,currentSpeed());cancelAnimationFrame(animId);gameLoop();drawNext();stopMusic();if(musicMode<4&&!muted)playMusic();document.getElementById('startbtn').textContent='リセット🐭';triggerNezumiTalk("よし、冒険スタート！ブロックを綺麗に並べて進もう！");} document.getElementById('startbtn').addEventListener('click',start); let dropTimer=null; const btnDown=document.getElementById('btn-down'); btnDown.addEventListener('touchstart',e=>{e.preventDefault();if(!running||paused)return;dropTimer=setInterval(drop,80);},{passive:false}); btnDown.addEventListener('touchend',e=>{e.preventDefault();clearInterval(dropTimer);}); btnDown.addEventListener('mousedown',()=>{if(!running||paused)return;dropTimer=setInterval(drop,80);}); btnDown.addEventListener('mouseup',()=>clearInterval(dropTimer)); function addCtrl(id,fn){const el=document.getElementById(id);el.addEventListener('touchstart',e=>{e.preventDefault();if(running&&!paused)fn();},{passive:false});el.addEventListener('mousedown',e=>{e.preventDefault();if(running&&!paused)fn();});} addCtrl('btn-rotate',()=>{soundRotate();const r=rotate(cur.shape);if(valid(r,curX,curY))cur.shape=r;}); addCtrl('btn-shot',()=>{while(valid(cur.shape,curX,curY+1))curY++;lock();}); let leftTimer=null, rightTimer=null; const btnLeft = document.getElementById('btn-left'); const btnRight = document.getElementById('btn-right'); const startLeftMove = () => { if (!running || paused) return; soundMove(); if (valid(cur.shape, curX - 1, curY)) curX--; leftTimer = setInterval(() => { if (!running || paused) { clearInterval(leftTimer); return; } if (valid(cur.shape, curX - 1, curY)) { soundMove(); curX--; } else { clearInterval(leftTimer); } }, 100); }; const stopLeftMove = () => { clearInterval(leftTimer); }; btnLeft.addEventListener('touchstart', (e) => { e.preventDefault(); startLeftMove(); }, { passive: false }); btnLeft.addEventListener('touchend', (e) => { e.preventDefault(); stopLeftMove(); }); btnLeft.addEventListener('mousedown', startLeftMove); btnLeft.addEventListener('mouseup', stopLeftMove); btnLeft.addEventListener('mouseleave', stopLeftMove); const startRightMove = () => { if (!running || paused) return; soundMove(); if (valid(cur.shape, curX + 1, curY)) curX++; rightTimer = setInterval(() => { if (!running || paused) { clearInterval(rightTimer); return; } if (valid(cur.shape, curX + 1, curY)) { soundMove(); curX++; } else { clearInterval(rightTimer); } }, 100); }; const stopRightMove = () => { clearInterval(rightTimer); }; btnRight.addEventListener('touchstart', (e) => { e.preventDefault(); startRightMove(); }, { passive: false }); btnRight.addEventListener('touchend', (e) => { e.preventDefault(); stopRightMove(); }); btnRight.addEventListener('mousedown', startRightMove); btnRight.addEventListener('mouseup', stopRightMove); btnRight.addEventListener('mouseleave', stopRightMove); document.addEventListener('keydown',e=>{if(e.key==='p'||e.key==='P'||e.key==='Escape'){togglePause();return;}if(!running||paused)return;if(e.key==='ArrowLeft'){soundMove();if(valid(cur.shape,curX-1,curY))curX--;}else if(e.key==='ArrowRight'){soundMove();if(valid(cur.shape,curX+1,curY))curX++;}else if(e.key==='ArrowDown'){drop();}else if(e.key==='ArrowUp'){soundRotate();const r=rotate(cur.shape);if(valid(r,curX,curY))cur.shape=r;}else if(e.key===' '){e.preventDefault();while(valid(cur.shape,curX,curY+1))curY++;lock();}});
 
-    /* 💡 会話システムのロジック */
-    function triggerNezumiTalk(text) {
-        document.getElementById('talk-text').textContent = "ネズミ「" + text + "」";
-    }
-    function talk(id) {
-        const txt = document.getElementById('talk-text');
-        const opt = document.getElementById('talk-options');
-        if(id === 1) {
-            love += 10;
-            document.getElementById('love').textContent = love;
-            txt.textContent = "ネズミ「えへへ、ありがとう！頼りにしてるよ！」";
-            opt.innerHTML = `<button class="talk-opt-btn" onclick="talk(3)">「よし、ゲームを始めよう」</button>`;
-        } else if(id === 2) {
-            love -= 5;
-            document.getElementById('love').textContent = love;
-            txt.textContent = "ネズミ「むぅ…ボクだってちゃんと役に立てるもん！」";
-            opt.innerHTML = `<button class="talk-opt-btn" onclick="talk(3)">「冗談だよ、始めよう」</button>`;
-        } else if(id === 3) {
-            txt.textContent = "ネズミ「いつでも準備オッケーだよ！『スタート🐭』を押してね！」";
-            opt.innerHTML = `
-                <button class="talk-opt-btn" onclick="talk(1)">「もう一度話す」</button>
-            `;
+<script>
+    const canvas = document.getElementById('room-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // ゲームデータ
+    let love = 10;
+    let cheese = 3;
+    let nezumiState = 'normal'; // normal, happy, eating, sleep
+    let nezumiX = 130;
+    let nezumiY = 110;
+    let pulseFactor = 0; // アニメーション用
+
+    // 会話のシナリオデータ
+    const scenarios = {
+        start: {
+            text: "「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」",
+            options: [
+                { text: "「今日の調子はどう？」", next: "condition" },
+                { text: "「好きな食べ物は？」", next: "food" }
+            ]
+        },
+        condition: {
+            text: "「きみが会いに来てくれたから、すっごく元気が出たよ！えへへ。」",
+            loveBonus: 5,
+            state: 'happy',
+            options: [{ text: "「それはよかった！」", next: "start" }]
+        },
+        food: {
+            text: "「やっぱり、黄色くてあま～い、とろけるチーズが一番好き！きみは何が好き？」",
+            options: [
+                { text: "「お肉が好きだよ」", next: "meat" },
+                { text: "「甘いお菓子が好き」", next: "sweet" }
+            ]
+        },
+        meat: {
+            text: "「お肉！ワイルドだねぇ！ボクは食べられないけど、きみがいっぱい食べて元気なら嬉しいな！」",
+            loveBonus: 5,
+            state: 'happy',
+            options: [{ text: "「ありがとう！」", next: "start" }]
+        },
+        sweet: {
+            text: "「お菓子！いいよねぇ、クッキーのひとかけらでもボクにとっては大ごちそうなんだ！」",
+            loveBonus: 8,
+            state: 'happy',
+            options: [{ text: "「今度分けてあげるね」", next: "start" }]
+        }
+    };
+
+    // ネズミ（ピクセルアート風）を描画する関数
+    function drawNezumi() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 背景：ほっこりしたお部屋の床と壁
+        ctx.fillStyle = '#4a4a6a'; // 壁
+        ctx.fillRect(0, 0, canvas.width, 140);
+        ctx.fillStyle = '#6e5040'; // 木の床
+        ctx.fillRect(0, 140, canvas.width, 60);
+        
+        // 敷物（ラグ）
+        ctx.fillStyle = '#9ece6a';
+        ctx.beginPath();
+        ctx.ellipse(153, 160, 60, 20, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 呼吸アニメーションの計算
+        pulseFactor = Math.sin(Date.now() / 200) * 2;
+
+        // 32x32ピクセルアートをシミュレート（ドットの拡大描画）
+        const pixelSize = 3; 
+        
+        // 耳
+        ctx.fillStyle = '#ff9ebb'; // 耳の内側ピンク
+        ctx.fillRect(nezumiX - 12, nezumiY - 12 + pulseFactor/2, 9, 9);
+        ctx.fillRect(nezumiX + 24, nezumiY - 12 + pulseFactor/2, 9, 9);
+        
+        ctx.fillStyle = '#a9a9b3'; // 毛並みグレー
+        ctx.fillRect(nezumiX - 15, nezumiY - 9 + pulseFactor/2, 6, 9);
+        ctx.fillRect(nezumiX + 30, nezumiY - 9 + pulseFactor/2, 6, 9);
+
+        // 体と頭
+        ctx.fillRect(nezumiX - 6, nezumiY - 3 + pulseFactor, 33, 36); // 胴体
+        ctx.fillRect(nezumiX, nezumiY - 9 + pulseFactor/2, 21, 15); // 頭
+
+        // 白いお腹
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(nezumiX + 3, nezumiY + 12 + pulseFactor, 15, 18);
+
+        // 状態に応じた顔の描画
+        ctx.fillStyle = '#222222'; // 目と鼻の黒
+        if (nezumiState === 'happy') {
+            // にっこりおめめ (^^)
+            ctx.strokeStyle = '#222222';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(nezumiX + 4, nezumiY, 2, Math.PI, 0, false);
+            ctx.arc(nezumiX + 16, nezumiY, 2, Math.PI, 0, false);
+            ctx.stroke();
+            
+            // 赤みのあるほっぺ
+            ctx.fillStyle = '#ff6b6b';
+            ctx.fillRect(nezumiX - 3, nezumiY + 3, 4, 4);
+            ctx.fillRect(nezumiX + 20, nezumiY + 3, 4, 4);
+        } else if (nezumiState === 'sleep') {
+            // すやすや目 (--)
+            ctx.fillRect(nezumiX + 2, nezumiY, 5, 2);
+            ctx.fillRect(nezumiX + 14, nezumiY, 5, 2);
+        } else {
+            // 通常のまるいおめめ
+            ctx.fillRect(nezumiX + 3, nezumiY - 2, 4, 4);
+            ctx.fillRect(nezumiX + 14, nezumiY - 2, 4, 4);
+        }
+
+        // 鼻と口
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillRect(nezumiX + 9, nezumiY + 3, 3, 3); // 鼻
+        
+        // ひげ
+        ctx.strokeStyle = '#d0d0d0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(nezumiX - 4, nezumiY + 5); ctx.lineTo(nezumiX - 14, nezumiY + 3);
+        ctx.moveTo(nezumiX - 4, nezumiY + 8); ctx.lineTo(nezumiX - 14, nezumiY + 9);
+        ctx.moveTo(nezumiX + 25, nezumiY + 5); ctx.lineTo(nezumiX + 35, nezumiY + 3);
+        ctx.moveTo(nezumiX + 25, nezumiY + 8); ctx.lineTo(nezumiX + 35, nezumiY + 9);
+        ctx.stroke();
+
+        // チーズを食べているときのエフェクト
+        if (nezumiState === 'eating') {
+            ctx.fillStyle = '#ffb703';
+            ctx.fillRect(nezumiX + 6, nezumiY + 15, 9, 9); // 手元のチーズ
+            // もぐもぐの星エフェクト
+            ctx.fillStyle = '#ffffff';
+            if (Math.floor(Date.now() / 150) % 2 === 0) {
+                ctx.fillText("✨", nezumiX - 15, nezumiY);
+                ctx.fillText("✨", nezumiX + 32, nezumiY + 20);
+            }
         }
     }
-    board = newBoard();
-    draw();
+
+    // シナリオ進行と選択肢ボタンの生成
+    function showScenario(key) {
+        const s = scenarios[key];
+        document.getElementById('dialogue-text').textContent = s.text;
+        
+        if (s.state) {
+            nezumiState = s.state;
+            setTimeout(() => { nezumiState = 'normal'; }, 2000);
+        }
+        if (s.loveBonus) {
+            love += s.loveBonus;
+            document.getElementById('love-val').textContent = love;
+        }
+
+        const container = document.getElementById('options-container');
+        container.innerHTML = ''; // クリア
+
+        s.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'btn';
+            btn.textContent = opt.text;
+            btn.onclick = () => showScenario(opt.next);
+            container.appendChild(btn);
+        });
+    }
+
+    // アクション：チーズをあげる
+    function giveCheese() {
+        if (cheese > 0) {
+            cheese--;
+            love += 15;
+            document.getElementById('cheese-val').textContent = cheese;
+            document.getElementById('love-val').textContent = love;
+            
+            nezumiState = 'eating';
+            document.getElementById('dialogue-text').textContent = "ネズミ「わぁぁ！大好きなチーズだ！もぐもぐ…すっごく美味しいよ、ありがとう！」";
+            
+            setTimeout(() => {
+                nezumiState = 'normal';
+                showScenario('start');
+            }, 3000);
+        } else {
+            document.getElementById('dialogue-text').textContent = "ネズミ「チーズなくなっちゃったみたい。きみがいてくれるだけでボクは満足だよ！」";
+        }
+    }
+
+    // アクション：なでなでする
+    function strokeHead() {
+        love += 3;
+        document.getElementById('love-val').textContent = love;
+        nezumiState = 'happy';
+        document.getElementById('dialogue-text').textContent = "ネズミ「あはは、なでなで むずがゆいけど、あったかくて気持ちいいなぁ…」";
+        
+        // 3回に1回チーズを見つけてくれるほっこりイベント
+        if (Math.random() < 0.33) {
+            cheese++;
+            document.getElementById('cheese-val').textContent = cheese;
+            setTimeout(() => {
+                document.getElementById('dialogue-text').textContent = "ネズミ「あ！お部屋のすみにチーズが落ちてるのを見つけたよ！きみにあげる！」";
+            }, 1500);
+        }
+
+        setTimeout(() => {
+            nezumiState = 'normal';
+            showScenario('start');
+        }, 3000);
+    }
+
+    // 定期的な描画ループ（アニメーション用）
+    function loop() {
+        drawNezumi();
+        requestAnimationFrame(loop);
+    }
+
+    // ゲーム開始
+    showScenario('start');
+    loop();
 </script>
 </body>
 </html>
