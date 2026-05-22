@@ -251,7 +251,7 @@
     let thirst = parseFloat(localStorage.getItem('nezumi_thirst'));
     if (isNaN(thirst)) thirst = 100;
 
-    // 名前がすでに決まっている場合は入力画面をスキップ
+    // 名前が決定済みなら入力画面を非表示にする
     if (nezumiName) {
         document.getElementById('intro-screen').style.display = 'none';
         document.getElementById('speaker-name').textContent = nezumiName;
@@ -260,19 +260,16 @@
     function initStory() {
         const input = document.getElementById('name-input');
         let nameVal = input.value.trim();
-        if (!nameVal) nameVal = "ユキマル"; // 未入力時のデフォルト
+        if (!nameVal) nameVal = "ユキマル"; 
         
         nezumiName = nameVal;
         localStorage.setItem('nezumi_name', nezumiName);
         document.getElementById('speaker-name').textContent = nezumiName;
         
-        // フェードアウトさせてゲーム開始
         const screen = document.getElementById('intro-screen');
         screen.style.opacity = '0';
         setTimeout(() => { screen.style.display = 'none'; }, 500);
 
-        // セリフを名前に適応させて開始
-        scenarios.start.text = `「なにかお話しよっ！ボク、今日からきみの ${nezumiName} だよ！もっともっとお話ししたいな。」`;
         showScenario('start');
         saveGame();
     }
@@ -292,10 +289,10 @@
     let blinkTimer = 0;
     let isBlinking = false;
 
-    // 💡 名前イベントを消去し、スッキリさせた会話システム
+    // シナリオの文法エラー（slideバグ）を完全に修正
     const scenarios = {
         start: {
-            text: `「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」`,
+            text: "「なかよし度が増えると、ボクもっとハッピーになれるんだ！きみのこといっぱい教えてね！」",
             options: [
                 { text: "「今日の調子はどう？」", next: "condition" },
                 { text: "「好きな食べ物は？」", next: "food" },
@@ -309,7 +306,7 @@
         },
         food: {
             text: "「やっぱり、黄色くてあま～い、とろけるチーズが一番好き！きみは何が好き？」",
-            options: [{ text: "「お肉が好きだよ」", next: "meat" }, { text: "「甘いお菓子が好き」", next: "sweet" }]
+            options: [{ text: "「お肉が好きだよ dog」", next: "meat" }, { text: "「甘いお菓子が好き」", next: "sweet" }]
         },
         meat: {
             text: "「お肉！ワイルドだねぇ！ボクは食べられないけど、きみがいっぱい食べて元気なら嬉しいな！」",
@@ -317,11 +314,11 @@
         },
         sweet: {
             text: "「お菓子！いいよねぇ、クッキーのひとかけらでもボクにとっては大ごちそうなんだ！」",
-            loveBonus: 4, state: 'happy', options: [{ text: "「今度分けてあげるね slide", next: "start" }]
+            loveBonus: 4, state: 'happy', options: [{ text: "「今度分けてあげるね」", next: "start" }]
         },
         room: {
             text: "「この木のお部屋、あったかくて大好きなんだ！でも…きみが新しい家具とか置いてくれたら、もっと嬉しいかも！」",
-            options: [{ text: "「今度ふかふかのベッドを買ってあげる」", next: "room_bed" }, { text: "「おもちゃの車とかどう？」", next: "room_toy" }]
+            options: [{ text: "「今度ふかふかのベッドを買ってあげる Lich", next: "room_bed" }, { text: "「おもちゃの車とかどう？」", next: "room_toy" }]
         },
         room_bed: {
             text: "「わぁっ、ふかふかのベッド！？そこで丸くなって寝たら絶対に幸せだなぁ…楽しみ！」",
@@ -341,13 +338,13 @@
         },
         play_walk: {
             text: "「お散歩！お外の世界ってどんなに広いんだろう。いつかきみのポケットに入って、一緒にお外を見てみたいな！」",
-            loveBonus: 4, state: 'happy', options: [{ text: "「いつか一緒に行こうね」", next: "start" }]
+            loveBonus: 4, state: 'happy', options: [{ text: "「いつか一緒に行おうね」", next: "start" }]
         }
     };
 
     function checkMilestones(oldLove, newLove) {
         if (oldLove < 30 && newLove >= 30) {
-            alert(`🎉 なかよし度が30突破！【おもちゃのミニカー】がお部屋に追加されました！`);
+            alert("🎉 なかよし度が30突破！【おもちゃのミニカー】がお部屋に追加されました！");
             updateCarOption();
         }
         if (oldLove < 60 && newLove >= 60) {
@@ -362,7 +359,7 @@
         if (love >= 30 && !scenarios.start.options.some(o => o.next === 'event_car')) {
             scenarios.start.options.push({ text: "「ミニカーで遊ぼう！」", next: "event_car" });
             scenarios.event_car = {
-                text: "「わーい！この赤い車、ボクの宝物んだ！きみと一緒に走らせるとすっごく楽しい！」",
+                text: "「わーい！この赤い車、ボクの宝物なんだ！きみと一緒に走らせるとすっごく楽しい！」",
                 loveBonus: 5, state: 'happy', options: [{ text: "「ぶーんぶーん！」", next: "start" }]
             };
         }
@@ -512,11 +509,10 @@
         saveGame(); updateUI();
     }
 
-    // 💡 プレミアム・リアルドット絵の描画エンジン（おめめ完璧固定）
+    // ドット絵エンジン
     function drawPremiumRealPixel() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // お出かけ中の背景演出
         if (nezumiState === 'out') {
             let skyGrad = ctx.createLinearGradient(0, 0, 0, 120);
             skyGrad.addColorStop(0, '#7aa2f7'); skyGrad.addColorStop(1, '#aaddff');
@@ -542,20 +538,17 @@
         ctx.fillStyle = 'rgba(46, 26, 21, 0.3)';
         for(let y = 130; y < canvas.height; y += 14) ctx.fillRect(0, y, canvas.width, 1);
 
-        // 🚗 ミニカー
         if (love >= 30) {
             ctx.fillStyle = '#ff4d6d'; ctx.fillRect(30, 132, 16, 8); 
             ctx.fillStyle = '#ffb703'; ctx.fillRect(36, 129, 8, 4);  
             ctx.fillStyle = '#11111a'; ctx.fillRect(32, 139, 3, 3); ctx.fillRect(41, 139, 3, 3);  
         }
 
-        // 🛏️ ふかふかベッド
         if (love >= 100) {
             ctx.fillStyle = '#4ea8de'; ctx.fillRect(230, 122, 60, 22); 
             ctx.fillStyle = '#9ece6a'; ctx.fillRect(245, 120, 42, 6);  
         }
 
-        // ふん
         ctx.fillStyle = '#3e2723';
         for(let i = 0; i < poopCount; i++) {
             let px = 70 + (i * 30) + Math.sin(i * 10) * 10;
@@ -577,40 +570,9 @@
         ctx.fillStyle = 'rgba(30, 15, 10, 0.4)';
         ctx.beginPath(); ctx.ellipse(bx + 28, by + 22, 28, 5, 0, 0, Math.PI*2); ctx.fill();
 
-        // しっぽ
         ctx.strokeStyle = '#f4c2c2'; ctx.lineWidth = 3; ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(bx + 55, by + 10);
         ctx.bezierCurveTo(bx + 85, by + 15, bx + 100, by - 15, bx + 95, by - 30 + (isDead ? 0 : Math.sin(time/350)*4));
         ctx.stroke();
 
-        // 後ろ足
-        ctx.beginPath(); ctx.fillStyle = '#dedee8'; ctx.ellipse(bx + 40, by + 12, 16, 12, Math.PI/6, 0, Math.PI*2); ctx.fill();
-        ctx.fillStyle = '#ffccd5'; ctx.fillRect(bx + 44, by + 22, 10, 4);
-
-        // 胴体
-        ctx.fillStyle = '#ffffff';
-        for(let i=0; i<36; i+=2) { ctx.fillRect(bx + i * 0.2, by - 10 + i, 45 + (i * 0.4), 2); }
-        let bodyColors = isSick ? ['#f0f0f5', '#e1e1ed', '#cbd5e1', '#b8b8c7'] : ['#ffffff', '#f2f2fa', '#e1e1ed', '#d2d2e3', '#c2c2d6'];
-        for(let i=0; i<36; i+=2) {
-            ctx.fillStyle = bodyColors[Math.min(Math.floor(i/7), bodyColors.length-1)];
-            ctx.fillRect(bx + i * 0.2, by - 10 + i, 45 + (i * 0.4), 2);
-        }
-
-        // 奥耳
-        const drawRealEar = (ex, ey, innerColor, outerColor) => {
-            ctx.fillStyle = outerColor; ctx.beginPath(); ctx.ellipse(ex, ey, 15, 17, 0, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = innerColor; ctx.beginPath(); ctx.ellipse(ex, ey + 1, 11, 13, 0, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = isSick ? '#c97a8b' : '#e899a8'; ctx.beginPath(); ctx.ellipse(ex - 1, ey + 3, 7, 8, 0, 0, Math.PI*2); ctx.fill();
-        };
-        drawRealEar(bx + 12, by - 28, '#ffccd5', '#e6e6f2');
-
-        // 頭部
-        ctx.fillStyle = '#ffffff';
-        for(let i=0; i<24; i+=2) { ctx.fillRect(bx - 12 + i * 0.6, by - 18 + i, 24 + i, 2); }
-        let headColors = isSick ? ['#f5f5fa', '#e6e6f2', '#c2c2d6'] : ['#fcfcfc', '#f5f5fa', '#e6e6f2', '#d7d7eb'];
-        for(let i=0; i<24; i+=2) {
-            ctx.fillStyle = headColors[Math.min(Math.floor(i/6), headColors.length-1)];
-            ctx.fillRect(bx - 12 + i * 0.6, by - 18 + i, 24 + i, 2);
-        }
-
-        drawRealEar(bx + 26, by -
+        ctx.beginPath(); ctx.fillStyle = '#dedee8'; ctx.ellipse(bx + 40, by + 12, 16, 12, Math.PI/6, 0, Math.
