@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🐹 ねずみのほっこりルーム Premium Pixel</title>
+    <title><h3><h3>🐹 ねずみのほっこりルーム DX</h3></h3></title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body {
@@ -114,7 +114,7 @@
     </div>
 
     <div id="room-viewport">
-        <canvas id="room-canvas" width="310" height="220"></canvas>
+        <canvas id="room-canvas" width="314" height="200"></canvas>
     </div>
 
     <div id="dialogue-box">
@@ -141,12 +141,16 @@
     let blinkTimer = 0;
     let isBlinking = false;
 
+    // 💡 【無限増量シナリオシステム】質問と選択肢をここにどんどん追加できます！
     const scenarios = {
         start: {
             text: "「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」",
             options: [
                 { text: "「今日の調子はどう？」", next: "condition" },
-                { text: "「好きな食べ物は？」", next: "food" }
+                { text: "「好きな食べ物は？」", next: "food" },
+                { text: "「お部屋の住み心地は？」", next: "room" },
+                { text: "「ボクの名前をつけてあげようか？」", next: "name_event" },
+                { text: "「普段は何して遊んでるの？」", next: "play_event" }
             ]
         },
         condition: {
@@ -173,195 +177,189 @@
             loveBonus: 8,
             state: 'happy',
             options: [{ text: "「今度分けてあげるね」", next: "start" }]
+        },
+        // 💡 追加会話1：お部屋について
+        room: {
+            text: "「この木のお部屋、あったかくて大好きなんだ！でも…きみが新しい家具とか置いてくれたら、もっと嬉しいかも！」",
+            options: [
+                { text: "「今度ふかふかのベッドを買ってあげる」", next: "room_bed" },
+                { text: "「おもちゃの車とかどう？」", next: "room_toy" }
+            ]
+        },
+        room_bed: {
+            text: "「わぁっ、ふかふかのベッド！？そこで丸くなって寝たら絶対に幸せだなぁ…楽しみ！」",
+            loveBonus: 10,
+            state: 'happy',
+            options: [{ text: "「楽しみにしててね」", next: "start" }]
+        },
+        room_toy: {
+            text: "「おもちゃの車！それに乗って、このお部屋を大冒険するんだね！ワクワクしちゃうな！」",
+            loveBonus: 7,
+            state: 'happy',
+            options: [{ text: "「いっぱい遊んでね」", next: "start" }]
+        },
+        // 💡 追加会話2：名前について
+        name_event: {
+            text: "「えっ、ボクに名前をつけてくれるの！？どんな名前が良いかなぁ、ドキドキしちゃう…！」",
+            options: [
+                { text: "「白いから『ユキマル』はどう？」", next: "name_yuki" },
+                { text: "「小さくて可愛いから『大福』は？」", next: "name_daifuku" }
+            ]
+        },
+        name_yuki: {
+            text: "「ユキマル……！カッコよくて、とっても綺麗で素敵な名前だね！ボク、今日からユキマルになる！」",
+            loveBonus: 12,
+            state: 'happy',
+            options: [{ text: "「よろしくね、ユキマル」", next: "start" }]
+        },
+        name_daifuku: {
+            text: "「だいふく！？もちもちで美味しそうな名前だね！きみがボクをおいしそうって思ってくれてるなら嬉しいな！」",
+            loveBonus: 10,
+            state: 'happy',
+            options: [{ text: "「可愛い名前でしょ、よろしくね」", next: "start" }]
+        },
+        // 💡 追加会話3：遊びについて
+        play_event: {
+            text: "「普段はね、お部屋のすみをクンクン探検したり、しっぽを追いかけてグルグル回ったりしてるよ。きみは普段何して遊んでるの？」",
+            options: [
+                { text: "「ゲームをして遊んでるよ」", next: "play_game" },
+                { text: "「お外をのんびりお散歩してるよ」", next: "play_walk" }
+            ]
+        },
+        play_game: {
+            text: "「ゲーム！今ボクときみがこうやって遊んでるのもゲームなのかな？きみと同じ遊びができてボク幸せだよ！」",
+            loveBonus: 10,
+            state: 'happy',
+            options: [{ text: "「これからも一緒に遊ぼう」", next: "start" }]
+        },
+        play_walk: {
+            text: "「お散歩！お外の世界ってどんなに広いんだろう。いつかきみのポケットに入って、一緒にお外を見てみたいな！」",
+            loveBonus: 8,
+            state: 'happy',
+            options: [{ text: "「いつか一緒に行こうね」", next: "start" }]
         }
     };
 
     function drawPremiumRealPixel() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 💡 【大改装】お部屋のリアルなピクセル背景
-        // 1. 壁紙（温かみのあるベージュ・ライトブラウンのウッド調）
-        let wallGrad = ctx.createLinearGradient(0, 0, 0, 140);
-        wallGrad.addColorStop(0, '#d7ccc8'); // 上部は少し明るく
-        wallGrad.addColorStop(1, '#b0bec5'); // 部屋の隅のリアルな陰影
-        ctx.fillStyle = wallGrad;
-        ctx.fillRect(0, 0, canvas.width, 140);
+        // お部屋のウッド背景
+        let wallGrad = ctx.createLinearGradient(0, 0, 0, 130);
+        wallGrad.addColorStop(0, '#e3d8d4');
+        wallGrad.addColorStop(1, '#b0bec5');
+        ctx.fillStyle = wallGrad; ctx.fillRect(0, 0, canvas.width, 130);
+        
+        ctx.fillStyle = 'rgba(141, 110, 99, 0.12)';
+        for(let i = 0; i < canvas.width; i += 24) ctx.fillRect(i, 0, 2, 130);
+        
+        let floorGrad = ctx.createLinearGradient(0, 130, 0, canvas.height);
+        floorGrad.addColorStop(0, '#8d6e63'); floorGrad.addColorStop(1, '#4e342e');
+        ctx.fillStyle = floorGrad; ctx.fillRect(0, 130, canvas.width, 70);
+        
+        ctx.fillStyle = 'rgba(46, 26, 21, 0.3)';
+        for(let y = 130; y < canvas.height; y += 14) ctx.fillRect(0, y, canvas.width, 1);
 
-        // 壁の木目ラインを細かく描写
-        ctx.fillStyle = 'rgba(141, 110, 99, 0.15)';
-        for(let i = 0; i < canvas.width; i += 24) {
-            ctx.fillRect(i, 0, 2, 140);
-        }
-
-        // 2. 窓から差し込む木漏れ日・光の表現（斜めの光線）
-        let lightGrad = ctx.createLinearGradient(0, 0, canvas.width, 140);
-        lightGrad.addColorStop(0, 'rgba(255, 255, 220, 0.25)');
-        lightGrad.addColorStop(0.4, 'rgba(255, 255, 220, 0.08)');
-        lightGrad.addColorStop(0.7, 'transparent');
-        ctx.fillStyle = lightGrad;
-        ctx.beginPath();
-        ctx.moveTo(0, 0); ctx.lineTo(160, 0); ctx.lineTo(60, 140); ctx.lineTo(0, 140);
-        ctx.closePath(); ctx.fill();
-
-        // 3. 幅木（壁と床の境界線）
-        ctx.fillStyle = '#5d4037';
-        ctx.fillRect(0, 136, canvas.width, 4);
-
-        // 4. フローリングの床（リアルな横板張りの陰影）
-        let floorGrad = ctx.createLinearGradient(0, 140, 0, canvas.height);
-        floorGrad.addColorStop(0, '#8d6e63'); // 手前に向かって暗くなる立体感
-        floorGrad.addColorStop(1, '#4e342e');
-        ctx.fillStyle = floorGrad;
-        ctx.fillRect(0, 140, canvas.width, 80);
-
-        // フローリングの目地（板の隙間）
-        ctx.fillStyle = 'rgba(46, 26, 21, 0.4)';
-        for(let y = 140; y < canvas.height; y += 16) {
-            ctx.fillRect(0, y, canvas.width, 1);
-        }
-        for(let x = 20; x < canvas.width; x += 60) {
-            ctx.fillRect(x, 140, 1, canvas.height); // 互い違いの縦線
-        }
-
-        // 5. ネズミの足元のリアルな影（オクルージョンシャドウ）
         const time = Date.now();
-        const breath = Math.sin(time / 240) * 1.5;
+        const breath = Math.sin(time / 230) * 1.5;
 
         if (++blinkTimer > 110) {
             isBlinking = true;
             if (blinkTimer > 114) { isBlinking = false; blinkTimer = 0; }
         }
 
-        const bx = 110;
-        const by = 135 + breath;
+        const bx = 115;
+        const by = 125 + breath;
 
-        let shadowGrad = ctx.createRadialGradient(bx + 25, by + 22, 5, bx + 25, by + 22, 35);
-        shadowGrad.addColorStop(0, 'rgba(30, 15, 10, 0.6)');
-        shadowGrad.addColorStop(1, 'transparent');
-        ctx.fillStyle = shadowGrad;
-        ctx.save();
-        ctx.transform(1, 0, 0, 0.25, 0, (by + 22) * 0.75); // 縦に潰して楕円の影に
-        ctx.beginPath(); ctx.arc(bx + 25, by + 22, 35, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
+        // 足元のリアルな影
+        ctx.fillStyle = 'rgba(30, 15, 10, 0.4)';
+        ctx.beginPath(); ctx.ellipse(bx + 22, by + 22, 28, 5, 0, 0, Math.PI*2); ctx.fill();
 
-        // 6. リアルに美しく伸びる白ピンクのしっぽ
-        ctx.strokeStyle = '#f4c2c2';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(bx + 55, by + 10);
-        ctx.bezierCurveTo(bx + 85, by + 15, bx + 100, by - 15, bx + 95, by - 30 + Math.sin(time/350)*4);
+        // しっぽ
+        ctx.strokeStyle = '#f4c2c2'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(bx + 45, by + 12);
+        ctx.bezierCurveTo(bx + 75, by + 15, bx + 90, by - 12, bx + 85, by - 22 + Math.sin(time/300)*3);
         ctx.stroke();
 
-        // 7. ファンシーラットの後ろ足
-        ctx.beginPath();
-        ctx.fillStyle = '#dedee8';
-        ctx.ellipse(bx + 40, by + 12, 16, 12, Math.PI/6, 0, Math.PI*2);
-        ctx.fill();
-        ctx.fillStyle = '#ffccd5';
-        ctx.fillRect(bx + 44, by + 22, 10, 4);
+        // 後ろ足
+        ctx.fillStyle = '#dedee8'; ctx.beginPath(); ctx.ellipse(bx + 35, by + 12, 14, 10, Math.PI/6, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#ffccd5'; ctx.fillRect(bx + 37, by + 21, 8, 3);
 
-        // 💡 【透け防止】胴体の裏地（完全に不透明な白で塗りつぶし）
+        // 胴体
         ctx.fillStyle = '#ffffff';
-        for(let i=0; i<36; i+=2) {
-            let w = 45 + (i * 0.4);
-            let offset = i * 0.2;
-            ctx.fillRect(bx + offset, by - 10 + i, w, 2);
+        ctx.beginPath(); ctx.ellipse(bx + 20, by + 8, 24, 16, Math.PI/12, 0, Math.PI*2); ctx.fill();
+
+        let bodyColors = ['#ffffff', '#f2f2fa', '#e1e1ed', '#cbd5e1'];
+        for(let i=0; i<30; i+=2) {
+            ctx.fillStyle = bodyColors[Math.min(Math.floor(i/8), bodyColors.length-1)];
+            ctx.beginPath(); ctx.ellipse(bx + 20, by + 8, 24 - i*0.2, 16 - i*0.2, Math.PI/12, 0, Math.PI*2); ctx.fill();
         }
 
-        // 8. リアルな「胴体」のグラデーション重ね
-        let bodyColors = ['#ffffff', '#f2f2fa', '#e1e1ed', '#d2d2e3', '#c2c2d6'];
-        for(let i=0; i<36; i+=2) {
-            let color = bodyColors[Math.min(Math.floor(i/7), bodyColors.length-1)];
-            let w = 45 + (i * 0.4);
-            let offset = i * 0.2;
-            ctx.fillStyle = color;
-            ctx.fillRect(bx + offset, by - 10 + i, w, 2);
-        }
-
-        // 奥の耳
-        const drawRealEar = (ex, ey, innerColor, outerColor) => {
-            ctx.fillStyle = outerColor;
-            ctx.beginPath(); ctx.ellipse(ex, ey, 15, 17, 0, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = innerColor;
-            ctx.beginPath(); ctx.ellipse(ex, ey + 1, 11, 13, 0, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#e899a8';
-            ctx.beginPath(); ctx.ellipse(ex - 1, ey + 3, 7, 8, 0, 0, Math.PI*2); ctx.fill();
+        // 奥耳
+        const drawEar = (ex, ey, inner, outer, shadowColor) => {
+            ctx.fillStyle = outer; ctx.beginPath(); ctx.ellipse(ex, ey, 14, 16, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = inner; ctx.beginPath(); ctx.ellipse(ex, ey + 1, 10, 12, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = shadowColor; ctx.beginPath(); ctx.ellipse(ex - 1, ey + 3, 6, 7, 0, 0, Math.PI*2); ctx.fill();
         };
-        drawRealEar(bx + 12, by - 28, '#ffccd5', '#e6e6f2');
+        drawEar(bx + 8, by - 24, '#ffccd5', '#e6e6f2', '#e58094');
 
-        // 💡 【透け防止】頭部の裏地
+        // 頭部・お顔
         ctx.fillStyle = '#ffffff';
-        for(let i=0; i<24; i+=2) {
-            let w = 24 + i;
-            let hOffset = i * 0.6;
-            ctx.fillRect(bx - 12 + hOffset, by - 18 + i, w, 2);
+        ctx.beginPath(); ctx.ellipse(bx + 5, by - 2, 16, 13, -Math.PI/12, 0, Math.PI*2); ctx.fill();
+
+        let headColors = ['#fcfcfc', '#f5f5fa', '#d7d7eb'];
+        for(let i=0; i<20; i+=2) {
+            ctx.fillStyle = headColors[Math.min(Math.floor(i/7), headColors.length-1)];
+            ctx.beginPath(); ctx.ellipse(bx + 5, by - 2, 16 - i*0.3, 13 - i*0.3, -Math.PI/12, 0, Math.PI*2); ctx.fill();
         }
 
-        // 9. 「頭部・顔」のグラデーション重ね
-        let headColors = ['#fcfcfc', '#f5f5fa', '#e6e6f2', '#d7d7eb'];
-        for(let i=0; i<24; i+=2) {
-            let color = headColors[Math.min(Math.floor(i/6), headColors.length-1)];
-            let w = 24 + i;
-            let hOffset = i * 0.6;
-            ctx.fillStyle = color;
-            ctx.fillRect(bx - 12 + hOffset, by - 18 + i, w, 2);
-        }
+        // 手前耳
+        drawEar(bx + 22, by - 20, '#ffccd5', '#f5f5fa', '#e58094');
 
-        // 手前の耳
-        drawRealEar(bx + 26, by - 24, '#ffccd5', '#f5f5fa');
-
-        // 黒い瞳
-        const ey = by - 7;
-        const ex = bx + 16;
-        if (isBlinking || nezumiState === 'sleep') {
-            ctx.strokeStyle = '#7a7a8a';
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(ex - 3, ey); ctx.lineTo(ex + 3, ey); ctx.stroke();
+        // 瞳
+        const ey = by - 5, ex = bx + 13;
+        if (isBlinking) {
+            ctx.strokeStyle = '#5e5e70'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(ex - 3, ey); ctx.lineTo(ex + 3, ey); ctx.stroke();
         } else if (nezumiState === 'happy') {
-            ctx.strokeStyle = '#11111a';
-            ctx.lineWidth = 2;
+            // 💡 にっこり笑ったときは、おめめが可愛いアーチ型に変わるように修正！
+            ctx.strokeStyle = '#11111a'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
             ctx.beginPath(); ctx.arc(ex, ey + 1, 3, Math.PI, 0, false); ctx.stroke();
+        } else if (nezumiState === 'eating') {
+            // もぐもぐ中の満足そうな細め目
+            ctx.strokeStyle = '#11111a'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.moveTo(ex - 3, ey + 1); ctx.lineTo(ex + 3, ey + 1); ctx.stroke();
         } else {
-            ctx.fillStyle = '#11111a';
-            ctx.beginPath(); ctx.arc(ex, ey, 4, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath(); ctx.arc(ex - 1, ey - 1, 1.2, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#11111a'; ctx.beginPath(); ctx.arc(ex, ey, 3.8, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#ffffff'; 
+            ctx.beginPath(); ctx.arc(ex - 1.2, ey - 1.2, 1, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(ex + 1, ey + 1, 0.5, 0, Math.PI*2); ctx.fill();
         }
 
         // 鼻先
-        ctx.fillStyle = '#ff9ebb';
-        ctx.fillRect(bx - 14, by + 2, 4, 3);
+        ctx.fillStyle = '#ff85a1'; ctx.fillRect(bx - 12, by + 2, 3, 2);
         
         // ひげ
-        ctx.strokeStyle = 'rgba(70, 70, 90, 0.4)'; // 背景に合わせて見えやすい濃さに調整
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(60, 60, 80, 0.4)'; ctx.lineWidth = 0.7; ctx.beginPath();
         let piku = Math.sin(time / 60) * 0.8;
-        ctx.moveTo(bx - 10, by + 3); ctx.lineTo(bx - 32, by - 1 + piku);
-        ctx.moveTo(bx - 10, by + 4); ctx.lineTo(bx - 35, by + 5 - piku);
-        ctx.moveTo(bx - 10, by + 5); ctx.lineTo(bx - 30, by + 11 + piku);
+        ctx.moveTo(bx - 8, by + 4); ctx.lineTo(bx - 26, by + 1 + piku);
+        ctx.moveTo(bx - 8, by + 5); ctx.lineTo(bx - 28, by + 7 - piku);
         ctx.stroke();
 
         // 前足
         ctx.fillStyle = '#ffccd5';
         if (nezumiState === 'eating') {
-            ctx.fillStyle = '#ffb703';
-            ctx.fillRect(bx - 2, by + 14, 12, 10);
-            ctx.fillStyle = '#e6a100';
-            ctx.fillRect(bx + 4, by + 16, 2, 2);
-
-            ctx.fillStyle = '#ffccd5';
-            ctx.fillRect(bx - 4, by + 14, 4, 4);
-            ctx.fillRect(bx + 8, by + 14, 4, 4);
+            // チーズもぐもぐ用の手元
+            ctx.fillStyle = '#ffb703'; ctx.fillRect(bx - 4, by + 12, 8, 8);
+            ctx.fillStyle = '#ffccd5'; ctx.fillRect(bx - 6, by + 12, 3, 3); ctx.fillRect(bx + 3, by + 12, 3, 3);
         } else {
-            ctx.fillRect(bx + 4, by + 15, 5, 4);
-            ctx.fillRect(bx + 14, by + 15, 4, 4);
+            ctx.fillRect(bx + 4, by + 14, 4, 3); ctx.fillRect(bx + 11, by + 14, 4, 3);
         }
-
-        // 地面の左足先
-        ctx.fillStyle = '#ffccd5';
-        ctx.fillRect(bx + 8, by + 23, 6, 3);
+        
+        // 足元のごちそうエフェクト
+        if (nezumiState === 'eating' && Math.floor(time / 200) % 2 === 0) {
+            ctx.fillStyle = '#ffb703';
+            ctx.font = '10px sans-serif';
+            ctx.fillText("✨", bx - 20, by); ctx.fillText("✨", bx + 40, by + 15);
+        }
     }
 
     function showScenario(key) {
@@ -370,6 +368,7 @@
         
         if (s.state) {
             nezumiState = s.state;
+            // 2.5秒間リアクションさせてから通常に戻る
             setTimeout(() => { nezumiState = 'normal'; }, 2500);
         }
         if (s.loveBonus) {
@@ -404,7 +403,7 @@
                 showScenario('start');
             }, 3500);
         } else {
-            document.getElementById('dialogue-text').textContent = "白ネズミ「チーズなくなっちゃったみたい。きみが側にいてくれるだけで、ボクは胸がいっぱいだよ。」";
+            document.getElementById('dialogue-text').textContent = "白ネズミ「チーズなくなっちゃったみたい。きみが側にいてくれるだけでボクは満足だよ！」";
         }
     }
 
@@ -433,6 +432,7 @@
         requestAnimationFrame(runLoop);
     }
 
+    // ゲーム開始
     showScenario('start');
     runLoop();
 </script>
