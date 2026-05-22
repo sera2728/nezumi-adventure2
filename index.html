@@ -3,438 +3,139 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🐹 ねずみのほっこりルーム Premium Pixel</title>
+    <title>🐹 おしゃべり白ネズミ AI</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background: #0d0d1a;
-            color: #e0e0ff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        #game-container {
-            width: 350px;
-            background: #161626;
-            border: 2px solid #2d2d44;
-            border-radius: 24px;
-            padding: 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        #status-bar {
-            display: flex;
-            justify-content: space-between;
-            background: #090911;
-            padding: 10px 16px;
-            border-radius: 14px;
-            font-size: 13px;
-            border: 1px solid #1f1f33;
-        }
-        .status-item { display: flex; align-items: center; gap: 6px; }
-        .val { color: #ffb703; font-weight: bold; }
-
-        #room-viewport {
-            position: relative;
-            width: 100%;
-            height: 220px;
-            background: #090911;
-            border-radius: 16px;
-            border: 1px solid #2d2d44;
-            overflow: hidden;
-        }
-        canvas#room-canvas {
-            display: block;
-        }
-
-        #dialogue-box {
-            background: #090911;
-            border: 1px solid #2d2d44;
-            border-radius: 16px;
-            padding: 14px;
-            min-height: 85px;
-        }
-        #speaker-name {
-            font-size: 12px;
-            color: #ff758f;
-            margin-bottom: 6px;
-            font-weight: bold;
-            letter-spacing: 1px;
-        }
-        #dialogue-text {
-            font-size: 13px;
-            line-height: 1.6;
-            color: #e2e8f0;
-        }
-
-        #action-area {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        .btn {
-            background: #212135;
-            color: #f1f5f9;
-            border: 1px solid #31314d;
-            padding: 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 13px;
-            text-align: left;
-            transition: all 0.2s;
-        }
-        .btn:hover { background: #2d2d49; border-color: #4e4e75; }
-        .btn:active { background: #171726; }
+        body { font-family: sans-serif; background: #0d0d1a; color: #e0e0ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        #game-container { width: 350px; background: #161626; border: 2px solid #2d2d44; border-radius: 24px; padding: 15px; display: flex; flex-direction: column; gap: 12px; }
         
-        .action-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-        .act-btn {
-            text-align: center;
-            background: linear-gradient(135deg, #ffb703, #ee9b00);
-            color: #0d0d1a;
-            font-weight: bold;
-            border: none;
-        }
-        .act-btn:hover { background: linear-gradient(135deg, #ffc947, #ffb703); transform: translateY(-1px); }
+        /* APIキー入力欄（最初はこれが必要） */
+        #api-setup { background: #090911; padding: 10px; border-radius: 12px; border: 1px solid #ffb703; display: flex; flex-direction: column; gap: 8px; }
+        #api-key-input { background: #1a1a2e; border: 1px solid #31314d; color: white; padding: 8px; border-radius: 6px; font-size: 10px; }
+        
+        /* 部屋・ネズミ */
+        #room-viewport { width: 100%; height: 180px; background: #090911; border-radius: 16px; border: 1px solid #2d2d44; overflow: hidden; }
+        canvas#room-canvas { display: block; }
+
+        /* AI会話ログ */
+        #dialogue-box { background: #090911; border: 1px solid #2d2d44; border-radius: 16px; padding: 12px; height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .msg { font-size: 12px; line-height: 1.4; padding: 6px 10px; border-radius: 10px; max-width: 85%; }
+        .ai-msg { background: #212135; align-self: flex-start; color: #e2e8f0; border-bottom-left-radius: 2px; }
+        .user-msg { background: #4e4e70; align-self: flex-end; color: white; border-bottom-right-radius: 2px; }
+
+        /* チャット入力エリア */
+        #chat-area { display: flex; gap: 6px; }
+        #chat-input { flex-grow: 1; background: #090911; border: 1px solid #2d2d44; border-radius: 10px; color: white; padding: 10px; font-size: 13px; }
+        #send-btn { background: #ffb703; border: none; padding: 0 15px; border-radius: 10px; color: #0d0d1a; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="status-bar">
-        <div class="status-item">🤝 なかよし度: <span id="love-val" class="val">10</span></div>
-        <div class="status-item">🧀 チーズの数: <span id="cheese-val" class="val">3</span></div>
+    <div id="api-setup" id="setup-ui">
+        <p style="font-size: 10px; color: #ffb703;">1. APIキーを貼り付けてね</p>
+        <input type="password" id="api-key-input" placeholder="AIza...">
+        <button onclick="saveKey()" style="background: #ffb703; border: none; border-radius: 4px; padding: 4px; font-size: 11px; cursor: pointer;">接続する</button>
     </div>
 
     <div id="room-viewport">
-        <canvas id="room-canvas" width="310" height="220"></canvas>
+        <canvas id="room-canvas" width="310" height="180"></canvas>
     </div>
 
-    <div id="dialogue-box">
-        <div id="speaker-name">白ネズミ</div>
-        <div id="dialogue-text">「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」</div>
+    <div id="dialogue-box" id="chat-log">
+        <div class="msg ai-msg">ネズミ「接続してくれたら、おしゃべりできるよ！」</div>
     </div>
 
-    <div id="action-area">
-        <div id="options-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
-        <div class="action-row">
-            <button class="btn act-btn" onclick="giveCheese()">🧀 チーズをあげる</button>
-            <button class="btn act-btn" onclick="strokeHead()">👋 なでなでする</button>
-        </div>
+    <div id="chat-area">
+        <input type="text" id="chat-input" placeholder="ネズミに話しかける..." onkeypress="if(event.key==='Enter')sendMessage()">
+        <button id="send-btn" onclick="sendMessage()">送信</button>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById('room-canvas');
     const ctx = canvas.getContext('2d');
+    let apiKey = localStorage.getItem('gemini_api_key') || "";
+    let nezumiState = 'normal';
 
-    let love = 10;
-    let cheese = 3;
-    let nezumiState = 'normal'; 
-    let blinkTimer = 0;
-    let isBlinking = false;
+    if(apiKey) document.getElementById('api-setup').style.display = 'none';
 
-    const scenarios = {
-        start: {
-            text: "「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」",
-            options: [
-                { text: "「今日の調子はどう？」", next: "condition" },
-                { text: "「好きな食べ物は？」", next: "food" }
-            ]
-        },
-        condition: {
-            text: "「きみが会いに来てくれたから、すっごく元気が出たよ！えへへ。」",
-            loveBonus: 5,
-            state: 'happy',
-            options: [{ text: "「それはよかった！」", next: "start" }]
-        },
-        food: {
-            text: "「やっぱり、黄色くてあま～い、とろけるチーズが一番好き！きみは何が好き？」",
-            options: [
-                { text: "「お肉が好きだよ」", next: "meat" },
-                { text: "「甘いお菓子が好き」", next: "sweet" }
-            ]
-        },
-        meat: {
-            text: "「お肉！ワイルドだねぇ！ボクは食べられないけど、きみがいっぱい食べて元気なら嬉しいな！」",
-            loveBonus: 5,
-            state: 'happy',
-            options: [{ text: "「ありがとう！」", next: "start" }]
-        },
-        sweet: {
-            text: "「お菓子！いいよねぇ、クッキーのひとかけらでもボクにとっては大ごちそうなんだ！」",
-            loveBonus: 8,
-            state: 'happy',
-            options: [{ text: "「今度分けてあげるね」", next: "start" }]
-        }
-    };
-
-    function drawPremiumRealPixel() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // 💡 【大改装】お部屋のリアルなピクセル背景
-        // 1. 壁紙（温かみのあるベージュ・ライトブラウンのウッド調）
-        let wallGrad = ctx.createLinearGradient(0, 0, 0, 140);
-        wallGrad.addColorStop(0, '#d7ccc8'); // 上部は少し明るく
-        wallGrad.addColorStop(1, '#b0bec5'); // 部屋の隅のリアルな陰影
-        ctx.fillStyle = wallGrad;
-        ctx.fillRect(0, 0, canvas.width, 140);
-
-        // 壁の木目ラインを細かく描写
-        ctx.fillStyle = 'rgba(141, 110, 99, 0.15)';
-        for(let i = 0; i < canvas.width; i += 24) {
-            ctx.fillRect(i, 0, 2, 140);
-        }
-
-        // 2. 窓から差し込む木漏れ日・光の表現（斜めの光線）
-        let lightGrad = ctx.createLinearGradient(0, 0, canvas.width, 140);
-        lightGrad.addColorStop(0, 'rgba(255, 255, 220, 0.25)');
-        lightGrad.addColorStop(0.4, 'rgba(255, 255, 220, 0.08)');
-        lightGrad.addColorStop(0.7, 'transparent');
-        ctx.fillStyle = lightGrad;
-        ctx.beginPath();
-        ctx.moveTo(0, 0); ctx.lineTo(160, 0); ctx.lineTo(60, 140); ctx.lineTo(0, 140);
-        ctx.closePath(); ctx.fill();
-
-        // 3. 幅木（壁と床の境界線）
-        ctx.fillStyle = '#5d4037';
-        ctx.fillRect(0, 136, canvas.width, 4);
-
-        // 4. フローリングの床（リアルな横板張りの陰影）
-        let floorGrad = ctx.createLinearGradient(0, 140, 0, canvas.height);
-        floorGrad.addColorStop(0, '#8d6e63'); // 手前に向かって暗くなる立体感
-        floorGrad.addColorStop(1, '#4e342e');
-        ctx.fillStyle = floorGrad;
-        ctx.fillRect(0, 140, canvas.width, 80);
-
-        // フローリングの目地（板の隙間）
-        ctx.fillStyle = 'rgba(46, 26, 21, 0.4)';
-        for(let y = 140; y < canvas.height; y += 16) {
-            ctx.fillRect(0, y, canvas.width, 1);
-        }
-        for(let x = 20; x < canvas.width; x += 60) {
-            ctx.fillRect(x, 140, 1, canvas.height); // 互い違いの縦線
-        }
-
-        // 5. ネズミの足元のリアルな影（オクルージョンシャドウ）
-        const time = Date.now();
-        const breath = Math.sin(time / 240) * 1.5;
-
-        if (++blinkTimer > 110) {
-            isBlinking = true;
-            if (blinkTimer > 114) { isBlinking = false; blinkTimer = 0; }
-        }
-
-        const bx = 110;
-        const by = 135 + breath;
-
-        let shadowGrad = ctx.createRadialGradient(bx + 25, by + 22, 5, bx + 25, by + 22, 35);
-        shadowGrad.addColorStop(0, 'rgba(30, 15, 10, 0.6)');
-        shadowGrad.addColorStop(1, 'transparent');
-        ctx.fillStyle = shadowGrad;
-        ctx.save();
-        ctx.transform(1, 0, 0, 0.25, 0, (by + 22) * 0.75); // 縦に潰して楕円の影に
-        ctx.beginPath(); ctx.arc(bx + 25, by + 22, 35, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
-
-        // 6. リアルに美しく伸びる白ピンクのしっぽ
-        ctx.strokeStyle = '#f4c2c2';
-        ctx.lineWidth = 3;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(bx + 55, by + 10);
-        ctx.bezierCurveTo(bx + 85, by + 15, bx + 100, by - 15, bx + 95, by - 30 + Math.sin(time/350)*4);
-        ctx.stroke();
-
-        // 7. ファンシーラットの後ろ足
-        ctx.beginPath();
-        ctx.fillStyle = '#dedee8';
-        ctx.ellipse(bx + 40, by + 12, 16, 12, Math.PI/6, 0, Math.PI*2);
-        ctx.fill();
-        ctx.fillStyle = '#ffccd5';
-        ctx.fillRect(bx + 44, by + 22, 10, 4);
-
-        // 💡 【透け防止】胴体の裏地（完全に不透明な白で塗りつぶし）
-        ctx.fillStyle = '#ffffff';
-        for(let i=0; i<36; i+=2) {
-            let w = 45 + (i * 0.4);
-            let offset = i * 0.2;
-            ctx.fillRect(bx + offset, by - 10 + i, w, 2);
-        }
-
-        // 8. リアルな「胴体」のグラデーション重ね
-        let bodyColors = ['#ffffff', '#f2f2fa', '#e1e1ed', '#d2d2e3', '#c2c2d6'];
-        for(let i=0; i<36; i+=2) {
-            let color = bodyColors[Math.min(Math.floor(i/7), bodyColors.length-1)];
-            let w = 45 + (i * 0.4);
-            let offset = i * 0.2;
-            ctx.fillStyle = color;
-            ctx.fillRect(bx + offset, by - 10 + i, w, 2);
-        }
-
-        // 奥の耳
-        const drawRealEar = (ex, ey, innerColor, outerColor) => {
-            ctx.fillStyle = outerColor;
-            ctx.beginPath(); ctx.ellipse(ex, ey, 15, 17, 0, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = innerColor;
-            ctx.beginPath(); ctx.ellipse(ex, ey + 1, 11, 13, 0, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#e899a8';
-            ctx.beginPath(); ctx.ellipse(ex - 1, ey + 3, 7, 8, 0, 0, Math.PI*2); ctx.fill();
-        };
-        drawRealEar(bx + 12, by - 28, '#ffccd5', '#e6e6f2');
-
-        // 💡 【透け防止】頭部の裏地
-        ctx.fillStyle = '#ffffff';
-        for(let i=0; i<24; i+=2) {
-            let w = 24 + i;
-            let hOffset = i * 0.6;
-            ctx.fillRect(bx - 12 + hOffset, by - 18 + i, w, 2);
-        }
-
-        // 9. 「頭部・顔」のグラデーション重ね
-        let headColors = ['#fcfcfc', '#f5f5fa', '#e6e6f2', '#d7d7eb'];
-        for(let i=0; i<24; i+=2) {
-            let color = headColors[Math.min(Math.floor(i/6), headColors.length-1)];
-            let w = 24 + i;
-            let hOffset = i * 0.6;
-            ctx.fillStyle = color;
-            ctx.fillRect(bx - 12 + hOffset, by - 18 + i, w, 2);
-        }
-
-        // 手前の耳
-        drawRealEar(bx + 26, by - 24, '#ffccd5', '#f5f5fa');
-
-        // 黒い瞳
-        const ey = by - 7;
-        const ex = bx + 16;
-        if (isBlinking || nezumiState === 'sleep') {
-            ctx.strokeStyle = '#7a7a8a';
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(ex - 3, ey); ctx.lineTo(ex + 3, ey); ctx.stroke();
-        } else if (nezumiState === 'happy') {
-            ctx.strokeStyle = '#11111a';
-            ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.arc(ex, ey + 1, 3, Math.PI, 0, false); ctx.stroke();
-        } else {
-            ctx.fillStyle = '#11111a';
-            ctx.beginPath(); ctx.arc(ex, ey, 4, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath(); ctx.arc(ex - 1, ey - 1, 1.2, 0, Math.PI*2); ctx.fill();
-        }
-
-        // 鼻先
-        ctx.fillStyle = '#ff9ebb';
-        ctx.fillRect(bx - 14, by + 2, 4, 3);
-        
-        // ひげ
-        ctx.strokeStyle = 'rgba(70, 70, 90, 0.4)'; // 背景に合わせて見えやすい濃さに調整
-        ctx.lineWidth = 0.8;
-        ctx.beginPath();
-        let piku = Math.sin(time / 60) * 0.8;
-        ctx.moveTo(bx - 10, by + 3); ctx.lineTo(bx - 32, by - 1 + piku);
-        ctx.moveTo(bx - 10, by + 4); ctx.lineTo(bx - 35, by + 5 - piku);
-        ctx.moveTo(bx - 10, by + 5); ctx.lineTo(bx - 30, by + 11 + piku);
-        ctx.stroke();
-
-        // 前足
-        ctx.fillStyle = '#ffccd5';
-        if (nezumiState === 'eating') {
-            ctx.fillStyle = '#ffb703';
-            ctx.fillRect(bx - 2, by + 14, 12, 10);
-            ctx.fillStyle = '#e6a100';
-            ctx.fillRect(bx + 4, by + 16, 2, 2);
-
-            ctx.fillStyle = '#ffccd5';
-            ctx.fillRect(bx - 4, by + 14, 4, 4);
-            ctx.fillRect(bx + 8, by + 14, 4, 4);
-        } else {
-            ctx.fillRect(bx + 4, by + 15, 5, 4);
-            ctx.fillRect(bx + 14, by + 15, 4, 4);
-        }
-
-        // 地面の左足先
-        ctx.fillStyle = '#ffccd5';
-        ctx.fillRect(bx + 8, by + 23, 6, 3);
-    }
-
-    function showScenario(key) {
-        const s = scenarios[key];
-        document.getElementById('dialogue-text').textContent = s.text;
-        
-        if (s.state) {
-            nezumiState = s.state;
-            setTimeout(() => { nezumiState = 'normal'; }, 2500);
-        }
-        if (s.loveBonus) {
-            love += s.loveBonus;
-            document.getElementById('love-val').textContent = love;
-        }
-
-        const container = document.getElementById('options-container');
-        container.innerHTML = '';
-
-        s.options.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.className = 'btn';
-            btn.textContent = opt.text;
-            btn.onclick = () => showScenario(opt.next);
-            container.appendChild(btn);
-        });
-    }
-
-    function giveCheese() {
-        if (cheese > 0) {
-            cheese--;
-            love += 15;
-            document.getElementById('cheese-val').textContent = cheese;
-            document.getElementById('love-val').textContent = love;
-            
-            nezumiState = 'eating';
-            document.getElementById('dialogue-text').textContent = "白ネズミ「わぁぁ！大好きなチーズだ！両手で持って…もぐもぐ。すっごく美味しいよ、ありがとう！」";
-            
-            setTimeout(() => {
-                nezumiState = 'normal';
-                showScenario('start');
-            }, 3500);
-        } else {
-            document.getElementById('dialogue-text').textContent = "白ネズミ「チーズなくなっちゃったみたい。きみが側にいてくれるだけで、ボクは胸がいっぱいだよ。」";
+    function saveKey() {
+        const val = document.getElementById('api-key-input').value;
+        if(val) {
+            apiKey = val;
+            localStorage.setItem('gemini_api_key', val);
+            document.getElementById('api-setup').style.display = 'none';
+            addMessage("ai", "接続成功！やっとお話しできるね！何から話そうか？");
         }
     }
 
-    function strokeHead() {
-        love += 3;
-        document.getElementById('love-val').textContent = love;
-        nezumiState = 'happy';
-        document.getElementById('dialogue-text').textContent = "白ネズミ「あはは、きみの手、おっきくてあったかいねぇ…頭をなでられるの、大好き。」";
-        
-        if (Math.random() < 0.35) {
-            cheese++;
-            document.getElementById('cheese-val').textContent = cheese;
-            setTimeout(() => {
-                document.getElementById('dialogue-text').textContent = "白ネズミ「あ！お部屋のすみにクッキーのかけらを見つけたよ！はい、きみにプレゼント！」";
-            }, 1800);
-        }
+    async function sendMessage() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        if(!text || !apiKey) return;
 
-        setTimeout(() => {
+        addMessage("user", text);
+        input.value = "";
+        
+        nezumiState = 'happy'; // 考えてる間は嬉しそうに
+
+        try {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: `あなたは可愛い白いペットのネズミです。名前はまだありません。一人称は「ボク」です。語尾には「〜だよ」「〜だね」など、ほっこりする口調を使ってください。短い返信を心がけてください。今回のユーザーの発言: ${text}` }] }]
+                })
+            });
+            const data = await response.json();
+            const aiText = data.candidates[0].content.parts[0].text;
+            addMessage("ai", aiText);
             nezumiState = 'normal';
-            showScenario('start');
-        }, 3500);
+        } catch (e) {
+            addMessage("ai", "…ごめん、うまく繋がらなかったみたい。キーが合ってるか確認してみて？");
+            nezumiState = 'normal';
+        }
     }
 
-    function runLoop() {
-        drawPremiumRealPixel();
-        requestAnimationFrame(runLoop);
+    function addMessage(type, text) {
+        const box = document.getElementById('dialogue-box');
+        const div = document.createElement('div');
+        div.className = `msg ${type}-msg`;
+        div.textContent = text;
+        box.appendChild(div);
+        box.scrollTop = box.scrollHeight;
     }
 
-    showScenario('start');
-    runLoop();
+    // 💡 リアルピクセル描画（前回のをコンパクトに）
+    function draw() {
+        ctx.clearRect(0,0,310,180);
+        // 背景
+        ctx.fillStyle = '#d7ccc8'; ctx.fillRect(0,0,310,120);
+        ctx.fillStyle = '#8d6e63'; ctx.fillRect(0,120,310,60);
+        
+        const time = Date.now();
+        const breath = Math.sin(time / 250) * 1.5;
+        const bx = 110, by = 110 + breath;
+
+        // ネズミ
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.ellipse(bx+25, by+15, 35, 25, 0, 0, Math.PI*2); ctx.fill(); // 胴体
+        ctx.beginPath(); ctx.ellipse(bx+15, by-5, 20, 18, 0, 0, Math.PI*2); ctx.fill(); // 頭
+        
+        ctx.fillStyle = '#ffccd5';
+        ctx.beginPath(); ctx.arc(bx, by-15, 12, 0, Math.PI*2); ctx.fill(); // 奥耳
+        ctx.beginPath(); ctx.arc(bx+20, by-15, 12, 0, Math.PI*2); ctx.fill(); // 手前耳
+        
+        ctx.fillStyle = '#111';
+        ctx.beginPath(); ctx.arc(bx+12, by-8, 3, 0, Math.PI*2); ctx.fill(); // 目
+        
+        ctx.fillStyle = '#ff9ebb';
+        ctx.fillRect(bx+5, by, 3, 2); // 鼻
+        
+        requestAnimationFrame(draw);
+    }
+    draw();
 </script>
 </body>
 </html>
