@@ -145,7 +145,7 @@
         start: {
             text: "「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」",
             options: [
-                { text: "正式な調子はどう？」", next: "condition" },
+                { text: "「今日の調子はどう？」", next: "condition" },
                 { text: "「好きな食べ物は？」", next: "food" }
             ]
         },
@@ -169,53 +169,82 @@
             options: [{ text: "「ありがとう！」", next: "start" }]
         },
         sweet: {
-            text: "「お菓子！いいよねぇ、クッキーのひとかけらでもボクにとっては大ごちそうんだ！」",
+            text: "「お菓子！いいよねぇ、クッキーのひとかけらでもボクにとっては大ごちそうなんだ！」",
             loveBonus: 8,
             state: 'happy',
             options: [{ text: "「今度分けてあげるね」", next: "start" }]
         }
     };
 
-    // 💡 緻密なピクセルアートを1マス（ドット）単位で精密に制御する関数
-    function p(x, y, color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(Math.round(x), Math.round(y), 2, 2); // 1ピクセル＝2x2サイズでくっきり描写
-    }
-
-    // 💡 リアルなグラデーションの塊を描く関数
-    function drawBlock(sx, sy, width, height, colorArr) {
-        for(let i=0; i<height; i+=2){
-            let color = colorArr[Math.min(Math.floor(i / colorArr.length), colorArr.length - 1)];
-            ctx.fillStyle = color;
-            ctx.fillRect(Math.round(sx), Math.round(sy + i), Math.round(width), 2);
-        }
-    }
-
     function drawPremiumRealPixel() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 背景：ほっこり暗めの部屋グラデーション
-        let roomGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        roomGrad.addColorStop(0, '#101026');
-        roomGrad.addColorStop(0.65, '#1d1d36');
-        roomGrad.addColorStop(0.65, '#261710'); // 木の床
-        roomGrad.addColorStop(1, '#120b07');
-        ctx.fillStyle = roomGrad;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // 💡 【大改装】お部屋のリアルなピクセル背景
+        // 1. 壁紙（温かみのあるベージュ・ライトブラウンのウッド調）
+        let wallGrad = ctx.createLinearGradient(0, 0, 0, 140);
+        wallGrad.addColorStop(0, '#d7ccc8'); // 上部は少し明るく
+        wallGrad.addColorStop(1, '#b0bec5'); // 部屋の隅のリアルな陰影
+        ctx.fillStyle = wallGrad;
+        ctx.fillRect(0, 0, canvas.width, 140);
 
+        // 壁の木目ラインを細かく描写
+        ctx.fillStyle = 'rgba(141, 110, 99, 0.15)';
+        for(let i = 0; i < canvas.width; i += 24) {
+            ctx.fillRect(i, 0, 2, 140);
+        }
+
+        // 2. 窓から差し込む木漏れ日・光の表現（斜めの光線）
+        let lightGrad = ctx.createLinearGradient(0, 0, canvas.width, 140);
+        lightGrad.addColorStop(0, 'rgba(255, 255, 220, 0.25)');
+        lightGrad.addColorStop(0.4, 'rgba(255, 255, 220, 0.08)');
+        lightGrad.addColorStop(0.7, 'transparent');
+        ctx.fillStyle = lightGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(160, 0); ctx.lineTo(60, 140); ctx.lineTo(0, 140);
+        ctx.closePath(); ctx.fill();
+
+        // 3. 幅木（壁と床の境界線）
+        ctx.fillStyle = '#5d4037';
+        ctx.fillRect(0, 136, canvas.width, 4);
+
+        // 4. フローリングの床（リアルな横板張りの陰影）
+        let floorGrad = ctx.createLinearGradient(0, 140, 0, canvas.height);
+        floorGrad.addColorStop(0, '#8d6e63'); // 手前に向かって暗くなる立体感
+        floorGrad.addColorStop(1, '#4e342e');
+        ctx.fillStyle = floorGrad;
+        ctx.fillRect(0, 140, canvas.width, 80);
+
+        // フローリングの目地（板の隙間）
+        ctx.fillStyle = 'rgba(46, 26, 21, 0.4)';
+        for(let y = 140; y < canvas.height; y += 16) {
+            ctx.fillRect(0, y, canvas.width, 1);
+        }
+        for(let x = 20; x < canvas.width; x += 60) {
+            ctx.fillRect(x, 140, 1, canvas.height); // 互い違いの縦線
+        }
+
+        // 5. ネズミの足元のリアルな影（オクルージョンシャドウ）
         const time = Date.now();
-        const breath = Math.sin(time / 240) * 1.5; // リアルな呼吸
+        const breath = Math.sin(time / 240) * 1.5;
 
         if (++blinkTimer > 110) {
             isBlinking = true;
             if (blinkTimer > 114) { isBlinking = false; blinkTimer = 0; }
         }
 
-        // 全体の中心座標
         const bx = 110;
         const by = 135 + breath;
 
-        // 1. リアルに美しく伸びる白ピンクのしっぽ（右側にS字に広がる）
+        let shadowGrad = ctx.createRadialGradient(bx + 25, by + 22, 5, bx + 25, by + 22, 35);
+        shadowGrad.addColorStop(0, 'rgba(30, 15, 10, 0.6)');
+        shadowGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = shadowGrad;
+        ctx.save();
+        ctx.transform(1, 0, 0, 0.25, 0, (by + 22) * 0.75); // 縦に潰して楕円の影に
+        ctx.beginPath(); ctx.arc(bx + 25, by + 22, 35, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+
+        // 6. リアルに美しく伸びる白ピンクのしっぽ
         ctx.strokeStyle = '#f4c2c2';
         ctx.lineWidth = 3;
         ctx.lineCap = 'round';
@@ -224,53 +253,65 @@
         ctx.bezierCurveTo(bx + 85, by + 15, bx + 100, by - 15, bx + 95, by - 30 + Math.sin(time/350)*4);
         ctx.stroke();
 
-        // 2. リアルファンシーラット特有の「後ろ足・腿（もも）」の丸み
-        let legColors = ['#e8e8f0', '#dedee8', '#cfcfde'];
+        // 7. ファンシーラットの後ろ足
         ctx.beginPath();
         ctx.fillStyle = '#dedee8';
         ctx.ellipse(bx + 40, by + 12, 16, 12, Math.PI/6, 0, Math.PI*2);
         ctx.fill();
-        // ちょこんとした足先
         ctx.fillStyle = '#ffccd5';
         ctx.fillRect(bx + 44, by + 22, 10, 4);
 
-        // 3. シュッとした本物らしいリアルな「胴体」（流線型）
+        // 💡 【透け防止】胴体の裏地（完全に不透明な白で塗りつぶし）
+        ctx.fillStyle = '#ffffff';
+        for(let i=0; i<36; i+=2) {
+            let w = 45 + (i * 0.4);
+            let offset = i * 0.2;
+            ctx.fillRect(bx + offset, by - 10 + i, w, 2);
+        }
+
+        // 8. リアルな「胴体」のグラデーション重ね
         let bodyColors = ['#ffffff', '#f2f2fa', '#e1e1ed', '#d2d2e3', '#c2c2d6'];
         for(let i=0; i<36; i+=2) {
             let color = bodyColors[Math.min(Math.floor(i/7), bodyColors.length-1)];
-            // 前が細く後ろが太いリアルなネズミの体型
             let w = 45 + (i * 0.4);
             let offset = i * 0.2;
             ctx.fillStyle = color;
             ctx.fillRect(bx + offset, by - 10 + i, w, 2);
         }
 
-        // 4. 前を向いたリアルに大きな「ピンクのお耳」
+        // 奥の耳
         const drawRealEar = (ex, ey, innerColor, outerColor) => {
             ctx.fillStyle = outerColor;
             ctx.beginPath(); ctx.ellipse(ex, ey, 15, 17, 0, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = innerColor;
             ctx.beginPath(); ctx.ellipse(ex, ey + 1, 11, 13, 0, 0, Math.PI*2); ctx.fill();
-            // 耳の中のリアルな陰影
             ctx.fillStyle = '#e899a8';
             ctx.beginPath(); ctx.ellipse(ex - 1, ey + 3, 7, 8, 0, 0, Math.PI*2); ctx.fill();
         };
-        drawRealEar(bx + 12, by - 28, '#ffccd5', '#e6e6f2'); // 奥の耳
+        drawRealEar(bx + 12, by - 28, '#ffccd5', '#e6e6f2');
 
-        // 5. シュッと横に尖ったリアルな「頭部・顔」
+        // 💡 【透け防止】頭部の裏地
+        ctx.fillStyle = '#ffffff';
+        for(let i=0; i<24; i+=2) {
+            let w = 24 + i;
+            let hOffset = i * 0.6;
+            ctx.fillRect(bx - 12 + hOffset, by - 18 + i, w, 2);
+        }
+
+        // 9. 「頭部・顔」のグラデーション重ね
         let headColors = ['#fcfcfc', '#f5f5fa', '#e6e6f2', '#d7d7eb'];
         for(let i=0; i<24; i+=2) {
             let color = headColors[Math.min(Math.floor(i/6), headColors.length-1)];
-            // 横向きに尖らせるための計算
             let w = 24 + i;
             let hOffset = i * 0.6;
             ctx.fillStyle = color;
             ctx.fillRect(bx - 12 + hOffset, by - 18 + i, w, 2);
         }
 
-        drawRealEar(bx + 26, by - 24, '#ffccd5', '#f5f5fa'); // 手前の耳
+        // 手前の耳
+        drawRealEar(bx + 26, by - 24, '#ffccd5', '#f5f5fa');
 
-        // 6. 横顔に位置する本物らしい「黒い瞳」
+        // 黒い瞳
         const ey = by - 7;
         const ex = bx + 16;
         if (isBlinking || nezumiState === 'sleep') {
@@ -282,20 +323,18 @@
             ctx.lineWidth = 2;
             ctx.beginPath(); ctx.arc(ex, ey + 1, 3, Math.PI, 0, false); ctx.stroke();
         } else {
-            // くりくりしたリアルな黒目
             ctx.fillStyle = '#11111a';
             ctx.beginPath(); ctx.arc(ex, ey, 4, 0, Math.PI*2); ctx.fill();
-            // リアルなハイライト（輝き）
             ctx.fillStyle = '#ffffff';
             ctx.beginPath(); ctx.arc(ex - 1, ey - 1, 1.2, 0, Math.PI*2); ctx.fill();
         }
 
-        // 7. 尖った鼻先（ピンク色）
+        // 鼻先
         ctx.fillStyle = '#ff9ebb';
         ctx.fillRect(bx - 14, by + 2, 4, 3);
         
-        // リアルに流れる非常に細いお髭
-        ctx.strokeStyle = 'rgba(210, 210, 230, 0.4)';
+        // ひげ
+        ctx.strokeStyle = 'rgba(70, 70, 90, 0.4)'; // 背景に合わせて見えやすい濃さに調整
         ctx.lineWidth = 0.8;
         ctx.beginPath();
         let piku = Math.sin(time / 60) * 0.8;
@@ -304,25 +343,23 @@
         ctx.moveTo(bx - 10, by + 5); ctx.lineTo(bx - 30, by + 11 + piku);
         ctx.stroke();
 
-        // 8. ちょこんとした可愛い「手元（前足）」
+        // 前足
         ctx.fillStyle = '#ffccd5';
         if (nezumiState === 'eating') {
-            // 黄色いピクセルチーズを抱える
             ctx.fillStyle = '#ffb703';
             ctx.fillRect(bx - 2, by + 14, 12, 10);
-            ctx.fillStyle = '#e6a100'; // チーズの穴の影
+            ctx.fillStyle = '#e6a100';
             ctx.fillRect(bx + 4, by + 16, 2, 2);
 
             ctx.fillStyle = '#ffccd5';
             ctx.fillRect(bx - 4, by + 14, 4, 4);
             ctx.fillRect(bx + 8, by + 14, 4, 4);
         } else {
-            // 通常時のおてて
             ctx.fillRect(bx + 4, by + 15, 5, 4);
             ctx.fillRect(bx + 14, by + 15, 4, 4);
         }
 
-        // 地面に接する左足先
+        // 地面の左足先
         ctx.fillStyle = '#ffccd5';
         ctx.fillRect(bx + 8, by + 23, 6, 3);
     }
