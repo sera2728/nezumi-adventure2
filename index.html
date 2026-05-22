@@ -14,7 +14,56 @@
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            overflow: hidden;
         }
+
+        /* 📖 オープニング名前入力画面 */
+        #intro-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #06060c;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            z-index: 1000;
+            text-align: center;
+            gap: 24px;
+            transition: opacity 0.5s ease;
+        }
+        .intro-title {
+            font-size: 14px;
+            color: #aaddff;
+            line-height: 1.8;
+            letter-spacing: 1.5px;
+            max-width: 280px;
+            font-weight: normal;
+        }
+        #name-input {
+            background: #161626;
+            border: 1px solid #31314d;
+            border-radius: 12px;
+            color: #fff;
+            padding: 12px;
+            font-size: 14px;
+            text-align: center;
+            width: 220px;
+            outline: none;
+        }
+        #name-input:focus { border-color: #ffb703; }
+        .start-btn {
+            background: linear-gradient(135deg, #ffb703, #ee9b00);
+            color: #0d0d1a;
+            font-weight: bold;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 12px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        /* ゲームメインコンテナ */
         #game-container {
             width: 350px;
             background: #161626;
@@ -130,6 +179,12 @@
 </head>
 <body>
 
+<div id="intro-screen">
+    <h1 class="intro-title">画面から出られない孤独なネズミを救うための、あなただけの物語</h1>
+    <input type="text" id="name-input" placeholder="ネズミの名前を入力..." maxlength="8">
+    <button class="start-btn" onclick="initStory()">物語を始める</button>
+</div>
+
 <div id="game-container">
     <div id="status-bar">
         <div class="status-item">🤝 なかよし: <span id="love-val" class="val">10</span></div>
@@ -176,6 +231,8 @@
     const canvas = document.getElementById('room-canvas');
     const ctx = canvas.getContext('2d');
 
+    // セーブデータの読み込み
+    let nezumiName = localStorage.getItem('nezumi_name') || "";
     let love = parseInt(localStorage.getItem('nezumi_love')) || 10;
     let cheese = parseInt(localStorage.getItem('nezumi_cheese')) || 3;
     let poopCount = parseInt(localStorage.getItem('nezumi_poop')) || 0;
@@ -194,22 +251,39 @@
     let thirst = parseFloat(localStorage.getItem('nezumi_thirst'));
     if (isNaN(thirst)) thirst = 100;
 
+    // 名前がすでに決まっている場合は入力画面をスキップ
+    if (nezumiName) {
+        document.getElementById('intro-screen').style.display = 'none';
+        document.getElementById('speaker-name').textContent = nezumiName;
+    }
+
+    function initStory() {
+        const input = document.getElementById('name-input');
+        let nameVal = input.value.trim();
+        if (!nameVal) nameVal = "ユキマル"; // 未入力時のデフォルト
+        
+        nezumiName = nameVal;
+        localStorage.setItem('nezumi_name', nezumiName);
+        document.getElementById('speaker-name').textContent = nezumiName;
+        
+        // フェードアウトさせてゲーム開始
+        const screen = document.getElementById('intro-screen');
+        screen.style.opacity = '0';
+        setTimeout(() => { screen.style.display = 'none'; }, 500);
+
+        // セリフを名前に適応させて開始
+        scenarios.start.text = `「なにかお話しよっ！ボク、今日からきみの ${nezumiName} だよ！もっともっとお話ししたいな。」`;
+        showScenario('start');
+        saveGame();
+    }
+
     if (!isDead) {
         hunger = Math.max(0, hunger - (elapsedSeconds * decayPerSecondHunger));
         thirst = Math.max(0, thirst - (elapsedSeconds * decayPerSecondThirst));
-        
         let newPoops = Math.floor(elapsedSeconds / 43200); 
-        if (hunger > 10) {
-            poopCount = Math.min(5, poopCount + newPoops);
-        }
-
-        if (poopCount >= 3 && !isSick && Math.random() < (love >= 100 ? 0.05 : 0.2)) {
-            isSick = true;
-        }
-
-        if (hunger <= 0 || thirst <= 0) {
-            isDead = true;
-        }
+        if (hunger > 10) poopCount = Math.min(5, poopCount + newPoops);
+        if (poopCount >= 3 && !isSick && Math.random() < (love >= 100 ? 0.05 : 0.2)) isSick = true;
+        if (hunger <= 0 || thirst <= 0) isDead = true;
     }
 
     localStorage.setItem('nezumi_last_time', now);
@@ -218,15 +292,14 @@
     let blinkTimer = 0;
     let isBlinking = false;
 
-    // シナリオ設定
+    // 💡 名前イベントを消去し、スッキリさせた会話システム
     const scenarios = {
         start: {
-            text: "「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」",
+            text: `「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」`,
             options: [
                 { text: "「今日の調子はどう？」", next: "condition" },
                 { text: "「好きな食べ物は？」", next: "food" },
                 { text: "「お部屋の住み心地は？」", next: "room" },
-                { text: "「ボクの名前をつけてあげようか？」", next: "name_event" },
                 { text: "「普段は何して遊んでるの？」", next: "play_event" }
             ]
         },
@@ -244,7 +317,7 @@
         },
         sweet: {
             text: "「お菓子！いいよねぇ、クッキーのひとかけらでもボクにとっては大ごちそうなんだ！」",
-            loveBonus: 4, state: 'happy', options: [{ text: "「今度分けてあげるね」", next: "start" }]
+            loveBonus: 4, state: 'happy', options: [{ text: "「今度分けてあげるね slide", next: "start" }]
         },
         room: {
             text: "「この木のお部屋、あったかくて大好きなんだ！でも…きみが新しい家具とか置いてくれたら、もっと嬉しいかも！」",
@@ -257,18 +330,6 @@
         room_toy: {
             text: "「おもちゃの車！それに乗って、このお部屋を大冒険するんだね！ワクワクしちゃうな！」",
             loveBonus: 4, state: 'happy', options: [{ text: "「いっぱい遊んでね」", next: "start" }]
-        },
-        name_event: {
-            text: "「えっ、ボクに名前をつけてくれるの！？どんな名前が良いかなぁ、ドキドキしちゃう…！」",
-            options: [{ text: "「白いから『ユキマル』はどう？」", next: "name_yuki" }, { text: "「小さくて可愛いから『大福』は？」", next: "name_daifuku" }]
-        },
-        name_yuki: {
-            text: "「ユキマル……！カッコよくて、とっても綺麗で素敵な名前だね！ボク、今日からユキマルになる！」",
-            loveBonus: 5, state: 'happy', options: [{ text: "「よろしくね、ユキマル」", next: "start" }]
-        },
-        name_daifuku: {
-            text: "「だいふく！？もちもちで美味しそうな名前だね！きみがボクをおいしそうって思ってくれてるなら嬉しいな！」",
-            loveBonus: 5, state: 'happy', options: [{ text: "「可愛い名前でしょ、よろしくね」", next: "start" }]
         },
         play_event: {
             text: "「普段はね、お部屋のすみをクンクン探検したり、しっぽを追いかけてグルグル回ったりしてるよ。きみは普段何して遊んでるの？」",
@@ -286,7 +347,7 @@
 
     function checkMilestones(oldLove, newLove) {
         if (oldLove < 30 && newLove >= 30) {
-            alert("🎉 なかよし度が30突破！【おもちゃのミニカー】がお部屋に追加されました！");
+            alert(`🎉 なかよし度が30突破！【おもちゃのミニカー】がお部屋に追加されました！`);
             updateCarOption();
         }
         if (oldLove < 60 && newLove >= 60) {
@@ -301,7 +362,7 @@
         if (love >= 30 && !scenarios.start.options.some(o => o.next === 'event_car')) {
             scenarios.start.options.push({ text: "「ミニカーで遊ぼう！」", next: "event_car" });
             scenarios.event_car = {
-                text: "「わーい！この赤い車、ボクの宝物なんだ！きみと一緒に走らせるとすっごく楽しい！」",
+                text: "「わーい！この赤い車、ボクの宝物んだ！きみと一緒に走らせるとすっごく楽しい！」",
                 loveBonus: 5, state: 'happy', options: [{ text: "「ぶーんぶーん！」", next: "start" }]
             };
         }
@@ -364,7 +425,7 @@
         nezumiState = 'out';
         updateUI();
         document.getElementById('speaker-name').textContent = "システム";
-        document.getElementById('dialogue-text').textContent = "ネズミを胸のポケットに入れて、一緒にお散歩に出かけました……。お外の背景に切り替わります。";
+        document.getElementById('dialogue-text').textContent = `${nezumiName}を胸のポケットに入れて、一緒にお散歩に出かけました……。お外の風景に切り替わります。`;
         document.getElementById('options-container').innerHTML = '';
         
         document.querySelectorAll('.btn, .act-btn').forEach(b => { if(b.id !== 'dummy') b.disabled = true; });
@@ -372,19 +433,19 @@
         setTimeout(() => {
             nezumiState = 'normal';
             document.querySelectorAll('.btn, .act-btn').forEach(b => b.disabled = false);
-            document.getElementById('speaker-name').textContent = "白ネズミ";
+            document.getElementById('speaker-name').textContent = nezumiName;
             
             let rewardText = "";
             let rand = Math.random();
             if (rand < 0.4) {
                 cheese += 2;
-                rewardText = "「ただいまー！お外の草むらで、特製プレミアムチーズを2個も見つけちゃった！神様にあげるね！」";
+                rewardText = `「ただいまー！お外の草むらで、特製プレミアムチーズを2個も見つけちゃった！神様にあげるね！」`;
             } else if (rand < 0.7 && isSick) {
                 isSick = false;
-                rewardText = "「お外の美味しい空気を吸ったら、病気がすっかり吹き飛んじゃった！太陽さんありがとう！」";
+                rewardText = `「お外の美味しい空気を吸ったら、病気がすっかり吹き飛んじゃった！きみ、ありがとう！」`;
             } else {
                 let oldLove = love; love += 5; checkMilestones(oldLove, love);
-                rewardText = "「お外の世界、すっごく広くてドキドキしたなぁ…！でもきみのポケットの中が一番安心するよ。」";
+                rewardText = `「お外の世界、すっごく広くてドキドキしたなぁ…！でもきみのポケットの中が一番安心するよ。」`;
             }
             
             document.getElementById('dialogue-text').textContent = rewardText;
@@ -396,7 +457,7 @@
     function triggerDeath() {
         isDead = true; saveGame(); updateUI();
         document.getElementById('speaker-name').textContent = "システム";
-        document.getElementById('dialogue-text').textContent = "白ネズミは天国へ旅立ってしまったようです。";
+        document.getElementById('dialogue-text').textContent = `${nezumiName || '白ネズミ'}は天国へ旅立ってしまったようです。`;
         document.querySelectorAll('.btn, .act-btn').forEach(b => b.disabled = true);
         document.getElementById('options-container').innerHTML = '<button class="btn act-btn" style="text-align:center;" onclick="resetGame()">新しく飼い直す（リセット）</button>';
     }
@@ -406,21 +467,21 @@
     function cleanRoom() {
         if(isDead) return;
         poopCount = 0;
-        document.getElementById('dialogue-text').textContent = "白ネズミ「お部屋がピカピカになった！神様、お掃除ありがとう！」";
+        document.getElementById('dialogue-text').textContent = "「お部屋がピカピカになった！神様、お掃除ありがとう！」";
         saveGame(); updateUI();
     }
 
     function giveMedicine() {
         if(isDead || !isSick) return;
         isSick = false; nezumiState = 'happy';
-        document.getElementById('dialogue-text').textContent = "白ネズミ「お薬苦かったけど、元気になったよ！ありがとう！」";
+        document.getElementById('dialogue-text').textContent = "「お薬苦かったけど、元気になったよ！ありがとう！」";
         saveGame(); updateUI();
     }
 
     function giveWater() {
         if(isDead) return;
         thirst = Math.min(100, thirst + 40); nezumiState = 'happy';
-        document.getElementById('dialogue-text').textContent = "白ネズミ「お水美味しい！のどのカラカラが治ったよ！」";
+        document.getElementById('dialogue-text').textContent = "「お水美味しい！のどのカラカラが治ったよ！」";
         saveGame(); updateUI();
     }
 
@@ -430,11 +491,11 @@
             cheese--;
             let oldLove = love; love += 4; checkMilestones(oldLove, love);
             hunger = Math.min(100, hunger + 40); nezumiState = 'eating';
-            document.getElementById('dialogue-text').textContent = "白ネズミ「大好きなチーズだ！もぐもぐ…お腹いっぱい！」";
+            document.getElementById('dialogue-text').textContent = "「大好きなチーズだ！もぐもぐ…お腹いっぱい！」";
             setTimeout(() => { nezumiState = 'normal'; showScenario('start'); }, 3500);
             saveGame(); updateUI();
         } else {
-            document.getElementById('dialogue-text').textContent = "白ネズミ「チーズなくなっちゃったみたい。きみが側にいてくれるだけで満足だよ！」";
+            document.getElementById('dialogue-text').textContent = "「チーズなくなっちゃったみたい。きみが側にいてくれるだけで満足だよ！」";
         }
     }
 
@@ -442,38 +503,33 @@
         if(isDead) return;
         let oldLove = love; love += 1; checkMilestones(oldLove, love);
         nezumiState = 'happy';
-        document.getElementById('dialogue-text').textContent = "白ネズミ「頭をなでられるの、あったかくて大好き…」";
+        document.getElementById('dialogue-text').textContent = "「頭をなでられるの、あったかくて大好き…」";
         if (Math.random() < 0.15) {
             cheese++;
-            setTimeout(() => { document.getElementById('dialogue-text').textContent = "白ネズミ「あ！お部屋のすみにチーズが落ちてたよ！はい、きみにプレゼント！」"; }, 1800);
+            setTimeout(() => { document.getElementById('dialogue-text').textContent = "「あ！お部屋のすみにチーズが落ちてたよ！はい、きみにプレゼント！」"; }, 1800);
         }
         setTimeout(() => { nezumiState = 'normal'; showScenario('start'); }, 3500);
         saveGame(); updateUI();
     }
 
-    // 💡 プレミアム・リアルドット絵の描画エンジン（重ね順を完全に修正）
+    // 💡 プレミアム・リアルドット絵の描画エンジン（おめめ完璧固定）
     function drawPremiumRealPixel() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 🚶 お出かけ中の背景演出（青空と緑の草原）
+        // お出かけ中の背景演出
         if (nezumiState === 'out') {
-            // 空
             let skyGrad = ctx.createLinearGradient(0, 0, 0, 120);
             skyGrad.addColorStop(0, '#7aa2f7'); skyGrad.addColorStop(1, '#aaddff');
             ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, canvas.width, 120);
-            // 雲
             ctx.fillStyle = '#ffffff'; ctx.fillRect(40, 30, 50, 14); ctx.fillRect(180, 20, 60, 16);
-            // 草原
             let grassGrad = ctx.createLinearGradient(0, 120, 0, canvas.height);
             grassGrad.addColorStop(0, '#9ece6a'); grassGrad.addColorStop(1, '#739a46');
             ctx.fillStyle = grassGrad; ctx.fillRect(0, 120, canvas.width, 80);
-            // お出かけ中のポケットのドット絵
-            ctx.fillStyle = '#4e4e70'; ctx.fillRect(120, 130, 70, 50); // ポケット
-            ctx.fillStyle = '#ffccd5'; ctx.fillRect(145, 122, 20, 8);  // チラッと見えるネズミのピンク耳
+            ctx.fillStyle = '#4e4e70'; ctx.fillRect(120, 130, 70, 50); 
+            ctx.fillStyle = '#ffccd5'; ctx.fillRect(145, 122, 20, 8);  
             return;
         }
 
-        // 通常時のお部屋背景
         let wallGrad = ctx.createLinearGradient(0, 0, 0, 130);
         wallGrad.addColorStop(0, '#e3d8d4'); wallGrad.addColorStop(1, '#b0bec5');
         ctx.fillStyle = wallGrad; ctx.fillRect(0, 0, canvas.width, 130);
@@ -486,14 +542,14 @@
         ctx.fillStyle = 'rgba(46, 26, 21, 0.3)';
         for(let y = 130; y < canvas.height; y += 14) ctx.fillRect(0, y, canvas.width, 1);
 
-        // 🚗 なかよし度30以上のミニカー
+        // 🚗 ミニカー
         if (love >= 30) {
             ctx.fillStyle = '#ff4d6d'; ctx.fillRect(30, 132, 16, 8); 
             ctx.fillStyle = '#ffb703'; ctx.fillRect(36, 129, 8, 4);  
             ctx.fillStyle = '#11111a'; ctx.fillRect(32, 139, 3, 3); ctx.fillRect(41, 139, 3, 3);  
         }
 
-        // 🛏️ なかよし度100以上のふかふかベッド
+        // 🛏️ ふかふかベッド
         if (love >= 100) {
             ctx.fillStyle = '#4ea8de'; ctx.fillRect(230, 122, 60, 22); 
             ctx.fillStyle = '#9ece6a'; ctx.fillRect(245, 120, 42, 6);  
@@ -518,7 +574,6 @@
         const bx = 110;
         const by = 135 + breath;
 
-        // 足元のリアルな影
         ctx.fillStyle = 'rgba(30, 15, 10, 0.4)';
         ctx.beginPath(); ctx.ellipse(bx + 28, by + 22, 28, 5, 0, 0, Math.PI*2); ctx.fill();
 
@@ -549,7 +604,7 @@
         };
         drawRealEar(bx + 12, by - 28, '#ffccd5', '#e6e6f2');
 
-        // 頭部（透け防止）
+        // 頭部
         ctx.fillStyle = '#ffffff';
         for(let i=0; i<24; i+=2) { ctx.fillRect(bx - 12 + i * 0.6, by - 18 + i, 24 + i, 2); }
         let headColors = isSick ? ['#f5f5fa', '#e6e6f2', '#c2c2d6'] : ['#fcfcfc', '#f5f5fa', '#e6e6f2', '#d7d7eb'];
@@ -558,69 +613,4 @@
             ctx.fillRect(bx - 12 + i * 0.6, by - 18 + i, 24 + i, 2);
         }
 
-        // 手前耳
-        drawRealEar(bx + 26, by - 24, '#ffccd5', '#f5f5fa');
-
-        // 💡 【大修正】瞳のレイヤー順序を頭部の「完全にあと」に配置！これで絶対に目は消えません！
-        const ey = by - 7, ex = bx + 16;
-        if (isDead) {
-            ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(ex-3, ey-3); ctx.lineTo(ex+3, ey+3); ctx.moveTo(ex+3, ey-3); ctx.lineTo(ex-3, ey+3); ctx.stroke();
-        } else if (isBlinking || isSick) {
-            ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ex - 3, ey); ctx.lineTo(ex + 3, ey); ctx.stroke();
-        } else if (nezumiState === 'happy') {
-            ctx.strokeStyle = '#11111a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(ex, ey + 1, 3, Math.PI, 0, false); ctx.stroke();
-        } else {
-            ctx.fillStyle = '#11111a'; ctx.beginPath(); ctx.arc(ex, ey, 4, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(ex - 1, ey - 1, 1.2, 0, Math.PI*2); ctx.fill();
-        }
-
-        // 鼻・ひげ
-        ctx.fillStyle = isSick ? '#e57373' : '#ff9ebb'; ctx.fillRect(bx - 14, by + 2, 4, 3);
-        ctx.strokeStyle = 'rgba(70, 70, 90, 0.4)'; ctx.lineWidth = 0.8; ctx.beginPath();
-        let piku = isDead ? 0 : Math.sin(time / 60) * 0.8;
-        ctx.moveTo(bx - 10, by + 3); ctx.lineTo(bx - 32, by - 1 + piku);
-        ctx.moveTo(bx - 10, by + 4); ctx.lineTo(bx - 35, by + 5 - piku);
-        ctx.stroke();
-
-        // 前足
-        ctx.fillStyle = '#ffccd5';
-        if (nezumiState === 'eating') {
-            ctx.fillStyle = '#ffb703'; ctx.fillRect(bx - 2, by + 14, 12, 10);
-            ctx.fillStyle = '#ffccd5'; ctx.fillRect(bx - 4, by + 14, 4, 4); ctx.fillRect(bx + 8, by + 14, 4, 4);
-        } else {
-            ctx.fillRect(bx + 4, by + 15, 5, 4); ctx.fillRect(bx + 14, by + 15, 4, 4);
-        }
-        ctx.fillRect(bx + 8, by + 23, 6, 3);
-    }
-
-    function showScenario(key) {
-        if(isDead) return;
-        const s = scenarios[key];
-        document.getElementById('dialogue-text').textContent = s.text;
-        if (s.state) { nezumiState = s.state; setTimeout(() => { if(!isDead) nezumiState = 'normal'; }, 2500); }
-        if (s.loveBonus) { let oldLove = love; love += s.loveBonus; checkMilestones(oldLove, love); }
-
-        const container = document.getElementById('options-container');
-        container.innerHTML = '';
-        s.options.forEach(opt => {
-            const btn = document.createElement('button');
-            btn.className = 'btn'; btn.textContent = opt.text;
-            btn.onclick = () => { showScenario(opt.next); saveGame(); updateUI(); };
-            container.appendChild(btn);
-        });
-    }
-
-    function runLoop() {
-        drawPremiumRealPixel();
-        requestAnimationFrame(runLoop);
-    }
-
-    // 初期化ロード
-    updateCarOption();
-    if (isDead) { triggerDeath(); } else { showScenario('start'); }
-    updateUI();
-    runLoop();
-</script>
-</body>
-</html>
+        drawRealEar(bx + 26, by -
