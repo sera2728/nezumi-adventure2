@@ -108,7 +108,6 @@
         .btn:hover { background: #2d2d49; border-color: #4e4e75; }
         .btn:disabled { background: #11111a; color: #555; border-color: #222; cursor: not-allowed; }
         
-        /* お世話アクションボタン */
         .action-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -177,14 +176,51 @@
     const canvas = document.getElementById('room-canvas');
     const ctx = canvas.getContext('2d');
 
-    // 🧬 育成生体パラメータ
-    let love = 10;
-    let cheese = 3;
-    let hunger = 100;
-    let thirst = 100;
-    let poopCount = 0;
-    let isSick = false;
-    let isDead = false;
+    // 💡 ゲームを閉じても数値を記憶するセーブデータ機能
+    let love = parseInt(localStorage.getItem('nezumi_love')) || 10;
+    let cheese = parseInt(localStorage.getItem('nezumi_cheese')) || 3;
+    let poopCount = parseInt(localStorage.getItem('nezumi_poop')) || 0;
+    let isSick = localStorage.getItem('nezumi_sick') === 'true';
+    let isDead = localStorage.getItem('nezumi_dead') === 'true';
+
+    // 💡 「3日で100から0になる」リアルタイム時間の計算
+    let lastTime = parseInt(localStorage.getItem('nezumi_last_time')) || Date.now();
+    let now = Date.now();
+    let elapsedSeconds = (now - lastTime) / 1000;
+
+    // 1秒あたりに減る量（3日間 = 259,200秒で100減る計算）
+    const decayPerSecondHunger = 100 / 259200; 
+    const decayPerSecondThirst = 100 / 172800; // のどは2日でカラカラ（ちょっと早め）
+
+    let hunger = parseFloat(localStorage.getItem('nezumi_hunger'));
+    if (isNaN(hunger)) hunger = 100;
+    let thirst = parseFloat(localStorage.getItem('nezumi_thirst'));
+    if (isNaN(thirst)) thirst = 100;
+
+    // オフライン（放置していた時間）の分のパラメータを減らす
+    if (!isDead) {
+        hunger = Math.max(0, hunger - (elapsedSeconds * decayPerSecondHunger));
+        thirst = Math.max(0, thirst - (elapsedSeconds * decayPerSecondThirst));
+        
+        // 放置時間に応じてふんがたまる（最大5個）
+        let newPoops = Math.floor(elapsedSeconds / 43200); // 12時間に1個ふんをする
+        if (hunger > 10) {
+            poopCount = Math.min(5, poopCount + newPoops);
+        }
+
+        // 病気判定
+        if (poopCount >= 3 && !isSick && Math.random() < 0.3) {
+            isSick = true;
+        }
+
+        // 死亡判定
+        if (hunger <= 0 || thirst <= 0) {
+            isDead = true;
+        }
+    }
+
+    // 今の時間を保存
+    localStorage.setItem('nezumi_last_time', now);
 
     let nezumiState = 'normal'; 
     let blinkTimer = 0;
@@ -210,7 +246,7 @@
         food: {
             text: "「やっぱり、黄色くてあま～い、とろけるチーズが一番好き！きみは何が好き？」",
             options: [
-                { text: "「お肉が好きだよ dog」", next: "meat" },
+                { text: "「お肉が好きだよ」", next: "meat" },
                 { text: "「甘いお菓子が好き」", next: "sweet" }
             ]
         },
@@ -221,7 +257,7 @@
             options: [{ text: "「ありがとう！」", next: "start" }]
         },
         sweet: {
-            text: "「お菓子！いいよねぇ、クッキーのひとかけらでもボクにとっては大ごちそうなんだ！」",
+            text: "「お菓子！いいよねぇ、クッキーのひとかけらでもボクにとっては大ごちそうんだ！」",
             loveBonus: 8,
             state: 'happy',
             options: [{ text: "「今度分けてあげるね」", next: "start" }]
@@ -256,7 +292,7 @@
             text: "「ユキマル……！カッコよくて、とっても綺麗で素敵な名前だね！ボク、今日からユキマルになる！」",
             loveBonus: 12,
             state: 'happy',
-            options: [{ text: "「よろしくね、ユキマル" }, { text: "「よろしくね、ユキマル」", next: "start" }]
+            options: [{ text: "「よろしくね、ユキマル」", next: "start" }]
         },
         name_daifuku: {
             text: "「だいふく！？もちもちで美味しそうな名前だね！きみがボクをおいしそうって思ってくれてるなら嬉しいな！」",
@@ -275,7 +311,7 @@
             text: "「ゲーム！今ボクときみがこうやって遊んでるのもゲームなのかな？きみと同じ遊びができてボク幸せだよ！」",
             loveBonus: 10,
             state: 'happy',
-            options: [{ text: "「これからも一緒に遊ぼう slide" }, { text: "「これからも一緒に遊ぼう」", next: "start" }]
+            options: [{ text: "「これからも一緒に遊ぼう」", next: "start" }]
         },
         play_walk: {
             text: "「お散歩！お外の世界ってどんなに広いんだろう。いつかきみのポケットに入って、一緒にお外を見てみたいな！」",
@@ -285,165 +321,154 @@
         }
     };
 
-    // 💡 リアル生体時計（時間経過でパラメーターが減っていくループ）
+    // 💡 15秒に1回、画面が開いている間も超のんびりゲージを減らす
     setInterval(() => {
         if (isDead) return;
 
-        // 1. お腹とのどが徐々に減る
-        hunger = Math.max(0, hunger - 2);
-        thirst = Math.max(0, thirst - 3);
+        hunger = Math.max(0, hunger - (15 * decayPerSecondHunger));
+        thirst = Math.max(0, thirst - (15 * decayPerSecondThirst));
 
-        // 2. 一定確率でふんをする
-        if (hunger > 20 && Math.random() < 0.08) {
+        if (hunger > 20 && Math.random() < 0.005) { 
             poopCount = Math.min(5, poopCount + 1);
-            document.getElementById('poop-val').textContent = `${poopCount} / 5`;
         }
 
-        // 3. 部屋の汚れによる病気判定
-        if (poopCount >= 3 && !isSick && Math.random() < 0.15) {
+        if (poopCount >= 3 && !isSick && Math.random() < 0.02) {
             isSick = true;
-            document.getElementById('condition-val').textContent = "病気";
-            document.getElementById('condition-val').className = "alert-val";
-            document.getElementById('cmd-med').style.display = "block";
-            document.getElementById('dialogue-text').textContent = "白ネズミ「ううう…お腹が痛いよぉ…お部屋が汚くて、病気になっちゃったみたい…」";
+            nezumiState = 'normal';
         }
 
-        // 4. 病気中はなかよし度が下がり続ける
-        if (isSick) {
-            love = Math.max(0, love - 2);
-            document.getElementById('love-val').textContent = love;
-        }
-
-        // 5. 死亡判定（飢え、脱水、または病気放置）
-        if (hunger <= 0 || thirst <= 0 || (isSick && Math.random() < 0.03)) {
+        if (hunger <= 0 || thirst <= 0) {
             triggerDeath();
         }
 
-        updateVitalBars();
-    }, 4000); // 4秒ごとに生体変化
+        saveGame();
+        updateUI();
+    }, 15000);
 
-    function updateVitalBars() {
+    function saveGame() {
+        localStorage.setItem('nezumi_love', love);
+        localStorage.setItem('nezumi_cheese', cheese);
+        localStorage.setItem('nezumi_hunger', hunger);
+        localStorage.setItem('nezumi_thirst', thirst);
+        localStorage.setItem('nezumi_poop', poopCount);
+        localStorage.setItem('nezumi_sick', isSick);
+        localStorage.setItem('nezumi_dead', isDead);
+        localStorage.setItem('nezumi_last_time', Date.now());
+    }
+
+    function updateUI() {
+        document.getElementById('love-val').textContent = love;
+        document.getElementById('cheese-val').textContent = cheese;
+        document.getElementById('poop-val').textContent = `${poopCount} / 5`;
+        
         document.getElementById('hunger-bar').style.width = hunger + '%';
         document.getElementById('thirst-bar').style.width = thirst + '%';
-        
-        // 残り少なくなったら赤くする
         document.getElementById('hunger-bar').style.backgroundColor = hunger < 25 ? '#ff4d6d' : '#9ece6a';
         document.getElementById('thirst-bar').style.backgroundColor = thirst < 25 ? '#ff4d6d' : '#4ea8de';
+
+        if (isDead) {
+            document.getElementById('condition-val').textContent = "死亡";
+            document.getElementById('condition-val').className = "alert-val";
+            document.getElementById('cmd-med').style.display = "none";
+        } else if (isSick) {
+            document.getElementById('condition-val').textContent = "病気";
+            document.getElementById('condition-val').className = "alert-val";
+            document.getElementById('cmd-med').style.display = "block";
+        } else {
+            document.getElementById('condition-val').textContent = "健康";
+            document.getElementById('condition-val').className = "val";
+            document.getElementById('cmd-med').style.display = "none";
+        }
     }
 
     function triggerDeath() {
         isDead = true;
-        nezumiState = 'sleep';
-        document.getElementById('condition-val').textContent = "死亡";
-        document.getElementById('condition-val').className = "alert-val";
+        saveGame();
+        updateUI();
         document.getElementById('speaker-name').textContent = "システム";
-        document.getElementById('dialogue-text').textContent = "白ネズミは息を引き取りました…お世話を怠ったため、天国へ旅立ってしまったようです。";
-        
-        // 全ボタンの無効化
+        document.getElementById('dialogue-text').textContent = "白ネズミは天国へ旅立ってしまったようです。";
         document.querySelectorAll('.btn, .act-btn').forEach(b => b.disabled = true);
-        document.getElementById('options-container').innerHTML = '<button class="btn act-btn" style="text-align:center;" onclick="location.reload()">復活させる（最初から）</button>';
+        document.getElementById('options-container').innerHTML = '<button class="btn act-btn" style="text-align:center;" onclick="resetGame()">新しく飼い直す（リセット）</button>';
     }
 
-    // 🧹 お世話アクション：掃除
+    function resetGame() {
+        localStorage.clear();
+        location.reload();
+    }
+
     function cleanRoom() {
         if(isDead) return;
         poopCount = 0;
-        document.getElementById('poop-val').textContent = "0 / 5";
-        document.getElementById('dialogue-text').textContent = "白ネズミ「わぁ！お部屋がピカピカになった！神様、お掃除してくれてありがとう！」";
+        document.getElementById('dialogue-text').textContent = "白ネズミ「お部屋がピカピカになった！神様、お掃除ありがとう！」";
+        saveGame(); updateUI();
     }
 
-    // 💊 お世話アクション：薬
     function giveMedicine() {
         if(isDead || !isSick) return;
         isSick = false;
-        document.getElementById('condition-val').textContent = "健康";
-        document.getElementById('condition-val').className = "val";
-        document.getElementById('cmd-med').style.display = "none";
         nezumiState = 'happy';
-        document.getElementById('dialogue-text').textContent = "白ネズミ「お薬苦かったけど、お腹の痛いのが治ったよ！治してくれてありがとう！」";
+        document.getElementById('dialogue-text').textContent = "白ネズミ「お薬苦かったけど、元気になったよ！ありがとう！」";
+        saveGame(); updateUI();
     }
 
-    // 💧 お世話アクション：水
     function giveWater() {
         if(isDead) return;
         thirst = Math.min(100, thirst + 40);
-        updateVitalBars();
         nezumiState = 'happy';
-        document.getElementById('dialogue-text').textContent = "白ネズミ「ぷはぁ！冷たくて美味しいお水だね！のどのカラカラが治ったよ！」";
+        document.getElementById('dialogue-text').textContent = "白ネズミ「お水美味しい！のどのカラカラが治ったよ！」";
+        saveGame(); updateUI();
     }
 
-    // 🧀 お世話アクション：チーズ
     function giveCheese() {
         if(isDead) return;
         if (cheese > 0) {
             cheese--;
             love += 15;
-            hunger = Math.min(100, hunger + 35);
-            document.getElementById('cheese-val').textContent = cheese;
-            document.getElementById('love-val').textContent = love;
-            updateVitalBars();
-            
+            hunger = Math.min(100, hunger + 40);
             nezumiState = 'eating';
-            document.getElementById('dialogue-text').textContent = "白ネズミ「わぁぁ！大好きなチーズだ！両手で持って…もぐもぐ。お腹いっぱい！」";
-            
-            setTimeout(() => {
-                nezumiState = 'normal';
-                showScenario('start');
-            }, 3500);
+            document.getElementById('dialogue-text').textContent = "白ネズミ「大好きなチーズだ！もぐもぐ…お腹いっぱい！」";
+            setTimeout(() => { nezumiState = 'normal'; showScenario('start'); }, 3500);
+            saveGame(); updateUI();
         } else {
-            document.getElementById('dialogue-text').textContent = "白ネズミ「チーズなくなっちゃったみたい。きみが側にいてくれるだけでボクは満足だよ！」";
+            document.getElementById('dialogue-text').textContent = "白ネズミ「チーズなくなっちゃったみたい。きみが側にいてくれるだけで満足だよ！」";
         }
     }
 
-    // 👋 なでなする
     function strokeHead() {
         if(isDead) return;
         love += 3;
-        document.getElementById('love-val').textContent = love;
         nezumiState = 'happy';
-        document.getElementById('dialogue-text').textContent = "白ネズミ「あはは、きみの手、おっきくてあったかいねぇ…頭をなでられるの、大好き。」";
-        
-        if (Math.random() < 0.35) {
+        document.getElementById('dialogue-text').textContent = "白ネズミ「頭をなでられるの、あったかくて大好き…」";
+        if (Math.random() < 0.2) {
             cheese++;
-            document.getElementById('cheese-val').textContent = cheese;
-            setTimeout(() => {
-                document.getElementById('dialogue-text').textContent = "白ネズミ「あ！お部屋のすみにクッキーのかけらを見つけたよ！はい、きみにプレゼント！」";
-            }, 1800);
+            setTimeout(() => { document.getElementById('dialogue-text').textContent = "白ネズミ「あ！お部屋のすみにチーズが落ちてたよ！はい、きみにプレゼント！」"; }, 1800);
         }
-
-        setTimeout(() => {
-            nezumiState = 'normal';
-            showScenario('start');
-        }, 3500);
+        setTimeout(() => { nezumiState = 'normal'; showScenario('start'); }, 3500);
+        saveGame(); updateUI();
     }
 
-    // 💡 プレミアム・リアルドット絵の描画エンジン（見た目は1ミリも変えていません）
+    // 💡 見た目キープの最高ドット絵エンジン
     function drawPremiumRealPixel() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // お部屋のウッド背景
         let wallGrad = ctx.createLinearGradient(0, 0, 0, 130);
-        wallGrad.addColorStop(0, '#e3d8d4');
-        wallGrad.addColorStop(1, '#b0bec5');
+        wallGrad.addColorStop(0, '#e3d8d4'); wallGrad.addColorStop(1, '#b0bec5');
         ctx.fillStyle = wallGrad; ctx.fillRect(0, 0, canvas.width, 130);
-        
         ctx.fillStyle = 'rgba(141, 110, 99, 0.12)';
         for(let i = 0; i < canvas.width; i += 24) ctx.fillRect(i, 0, 2, 130);
         
         let floorGrad = ctx.createLinearGradient(0, 130, 0, canvas.height);
         floorGrad.addColorStop(0, '#8d6e63'); floorGrad.addColorStop(1, '#4e342e');
         ctx.fillStyle = floorGrad; ctx.fillRect(0, 130, canvas.width, 70);
-        
         ctx.fillStyle = 'rgba(46, 26, 21, 0.3)';
         for(let y = 130; y < canvas.height; y += 14) ctx.fillRect(0, y, canvas.width, 1);
 
-        // 💡 画面内にたまっている「ふん」をドットでリアルに描画
+        // ふん
         ctx.fillStyle = '#3e2723';
         for(let i = 0; i < poopCount; i++) {
             let px = 30 + (i * 35) + Math.sin(i * 10) * 10;
             let py = 160 + (i % 2) * 12;
-            ctx.fillRect(px, py, 6, 4);
-            ctx.fillRect(px + 1, py - 2, 4, 2); // ちょっと立体的に
+            ctx.fillRect(px, py, 6, 4); ctx.fillRect(px + 1, py - 2, 4, 2);
         }
 
         const time = Date.now();
@@ -457,25 +482,22 @@
         const bx = 110;
         const by = 135 + breath;
 
-        // 足元のリアルな影
         ctx.fillStyle = 'rgba(30, 15, 10, 0.4)';
-        ctx.beginPath(); ctx.ellipse(bx + 25, by + 22, 28, 5, 0, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(bx + 28, by + 22, 28, 5, 0, 0, Math.PI*2); ctx.fill();
 
-        // 1. しっぽ
+        // しっぽ
         ctx.strokeStyle = '#f4c2c2'; ctx.lineWidth = 3; ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(bx + 55, by + 10);
+        ctx.beginPath(); ctx.moveTo(bx + 55, by + 10);
         ctx.bezierCurveTo(bx + 85, by + 15, bx + 100, by - 15, bx + 95, by - 30 + (isDead ? 0 : Math.sin(time/350)*4));
         ctx.stroke();
 
-        // 2. 後ろ足
+        // 後ろ足
         ctx.beginPath(); ctx.fillStyle = '#dedee8'; ctx.ellipse(bx + 40, by + 12, 16, 12, Math.PI/6, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = '#ffccd5'; ctx.fillRect(bx + 44, by + 22, 10, 4);
 
-        // 3. 胴体
+        // 胴体
         ctx.fillStyle = '#ffffff';
         for(let i=0; i<36; i+=2) { ctx.fillRect(bx + i * 0.2, by - 10 + i, 45 + (i * 0.4), 2); }
-
         let bodyColors = isSick ? ['#f0f0f5', '#e1e1ed', '#cbd5e1', '#b8b8c7'] : ['#ffffff', '#f2f2fa', '#e1e1ed', '#d2d2e3', '#c2c2d6'];
         for(let i=0; i<36; i+=2) {
             ctx.fillStyle = bodyColors[Math.min(Math.floor(i/7), bodyColors.length-1)];
@@ -490,49 +512,40 @@
         };
         drawRealEar(bx + 12, by - 28, '#ffccd5', '#e6e6f2');
 
-        // 5. 頭部
+        // 頭部
         ctx.fillStyle = '#ffffff';
         for(let i=0; i<24; i+=2) { ctx.fillRect(bx - 12 + i * 0.6, by - 18 + i, 24 + i, 2); }
-
         let headColors = isSick ? ['#f5f5fa', '#e6e6f2', '#c2c2d6'] : ['#fcfcfc', '#f5f5fa', '#e6e6f2', '#d7d7eb'];
         for(let i=0; i<24; i+=2) {
             ctx.fillStyle = headColors[Math.min(Math.floor(i/6), headColors.length-1)];
             ctx.fillRect(bx - 12 + i * 0.6, by - 18 + i, 24 + i, 2);
         }
 
-        // 手前耳
         drawRealEar(bx + 26, by - 24, '#ffccd5', '#f5f5fa');
 
-        // 6. 瞳（状態による変化）
+        // 瞳
         const ey = by - 7, ex = bx + 16;
         if (isDead) {
-            // 死亡時 (x x)
             ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
             ctx.beginPath(); ctx.moveTo(ex-3, ey-3); ctx.lineTo(ex+3, ey+3); ctx.moveTo(ex+3, ey-3); ctx.lineTo(ex-3, ey+3); ctx.stroke();
         } else if (isBlinking || isSick) {
-            // 病気・まばたき時は細める
-            ctx.strokeStyle = '#333'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(ex - 3, ey); ctx.lineTo(ex + 3, ey); ctx.stroke();
+            ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ex - 3, ey); ctx.lineTo(ex + 3, ey); ctx.stroke();
         } else if (nezumiState === 'happy') {
-            ctx.strokeStyle = '#11111a'; ctx.lineWidth = 2.5;
-            ctx.beginPath(); ctx.arc(ex, ey + 1, 3, Math.PI, 0, false); ctx.stroke();
+            ctx.strokeStyle = '#11111a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(ex, ey + 1, 3, Math.PI, 0, false); ctx.stroke();
         } else {
             ctx.fillStyle = '#11111a'; ctx.beginPath(); ctx.arc(ex, ey, 4, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(ex - 1, ey - 1, 1.2, 0, Math.PI*2); ctx.fill();
         }
 
-        // 7. 鼻
-        ctx.fillStyle = isSick ? '#e57373' : '#ff9ebb';
-        ctx.fillRect(bx - 14, by + 2, 4, 3);
-        
-        // ひげ
+        // 鼻・ひげ
+        ctx.fillStyle = isSick ? '#e57373' : '#ff9ebb'; ctx.fillRect(bx - 14, by + 2, 4, 3);
         ctx.strokeStyle = 'rgba(70, 70, 90, 0.4)'; ctx.lineWidth = 0.8; ctx.beginPath();
         let piku = isDead ? 0 : Math.sin(time / 60) * 0.8;
         ctx.moveTo(bx - 10, by + 3); ctx.lineTo(bx - 32, by - 1 + piku);
         ctx.moveTo(bx - 10, by + 4); ctx.lineTo(bx - 35, by + 5 - piku);
         ctx.stroke();
 
-        // 8. 前足
+        // 前足
         ctx.fillStyle = '#ffccd5';
         if (nezumiState === 'eating') {
             ctx.fillStyle = '#ffb703'; ctx.fillRect(bx - 2, by + 14, 12, 10);
@@ -547,16 +560,15 @@
         if(isDead) return;
         const s = scenarios[key];
         document.getElementById('dialogue-text').textContent = s.text;
-        
         if (s.state) { nezumiState = s.state; setTimeout(() => { if(!isDead) nezumiState = 'normal'; }, 2500); }
-        if (s.loveBonus) { love += s.loveBonus; document.getElementById('love-val').textContent = love; }
+        if (s.loveBonus) { love += s.loveBonus; }
 
         const container = document.getElementById('options-container');
         container.innerHTML = '';
         s.options.forEach(opt => {
             const btn = document.createElement('button');
             btn.className = 'btn'; btn.textContent = opt.text;
-            btn.onclick = () => showScenario(opt.next);
+            btn.onclick = () => { showScenario(opt.next); saveGame(); updateUI(); };
             container.appendChild(btn);
         });
     }
@@ -566,8 +578,12 @@
         requestAnimationFrame(runLoop);
     }
 
-    showScenario('start');
-    updateVitalBars();
+    if (isDead) {
+        triggerDeath();
+    } else {
+        showScenario('start');
+    }
+    updateUI();
     runLoop();
 </script>
 </body>
