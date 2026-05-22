@@ -575,4 +575,93 @@
         ctx.bezierCurveTo(bx + 85, by + 15, bx + 100, by - 15, bx + 95, by - 30 + (isDead ? 0 : Math.sin(time/350)*4));
         ctx.stroke();
 
-        ctx.beginPath(); ctx.fillStyle = '#dedee8'; ctx.ellipse(bx + 40, by + 12, 16, 12, Math.PI/6, 0, Math.
+        ctx.beginPath(); ctx.fillStyle = '#dedee8'; ctx.ellipse(bx + 40, by + 12, 16, 12, Math.PI/6, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#ffccd5'; ctx.fillRect(bx + 44, by + 22, 10, 4);
+
+        ctx.fillStyle = '#ffffff';
+        for(let i=0; i<36; i+=2) { ctx.fillRect(bx + i * 0.2, by - 10 + i, 45 + (i * 0.4), 2); }
+        let bodyColors = isSick ? ['#f0f0f5', '#e1e1ed', '#cbd5e1', '#b8b8c7'] : ['#ffffff', '#f2f2fa', '#e1e1ed', '#d2d2e3', '#c2c2d6'];
+        for(let i=0; i<36; i+=2) {
+            ctx.fillStyle = bodyColors[Math.min(Math.floor(i/7), bodyColors.length-1)];
+            ctx.fillRect(bx + i * 0.2, by - 10 + i, 45 + (i * 0.4), 2);
+        }
+
+        const drawRealEar = (ex, ey, innerColor, outerColor) => {
+            ctx.fillStyle = outerColor; ctx.beginPath(); ctx.ellipse(ex, ey, 15, 17, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = innerColor; ctx.beginPath(); ctx.ellipse(ex, ey + 1, 11, 13, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = isSick ? '#c97a8b' : '#e899a8'; ctx.beginPath(); ctx.ellipse(ex - 1, ey + 3, 7, 8, 0, 0, Math.PI*2); ctx.fill();
+        };
+        drawRealEar(bx + 12, by - 28, '#ffccd5', '#e6e6f2');
+
+        ctx.fillStyle = '#ffffff';
+        for(let i=0; i<24; i+=2) { ctx.fillRect(bx - 12 + i * 0.6, by - 18 + i, 24 + i, 2); }
+        let headColors = isSick ? ['#f5f5fa', '#e6e6f2', '#c2c2d6'] : ['#fcfcfc', '#f5f5fa', '#e6e6f2', '#d7d7eb'];
+        for(let i=0; i<24; i+=2) {
+            ctx.fillStyle = headColors[Math.min(Math.floor(i/6), headColors.length-1)];
+            ctx.fillRect(bx - 12 + i * 0.6, by - 18 + i, 24 + i, 2);
+        }
+
+        drawRealEar(bx + 26, by - 24, '#ffccd5', '#f5f5fa');
+
+        const ey = by - 7, ex = bx + 16;
+        if (isDead) {
+            ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(ex-3, ey-3); ctx.lineTo(ex+3, ey+3); ctx.moveTo(ex+3, ey-3); ctx.lineTo(ex-3, ey+3); ctx.stroke();
+        } else if (isBlinking || isSick) {
+            ctx.strokeStyle = '#333'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(ex - 3, ey); ctx.lineTo(ex + 3, ey); ctx.stroke();
+        } else if (nezumiState === 'happy') {
+            ctx.strokeStyle = '#11111a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(ex, ey + 1, 3, Math.PI, 0, false); ctx.stroke();
+        } else {
+            ctx.fillStyle = '#11111a'; ctx.beginPath(); ctx.arc(ex, ey, 4, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(ex - 1, ey - 1, 1.2, 0, Math.PI*2); ctx.fill();
+        }
+
+        ctx.fillStyle = isSick ? '#e57373' : '#ff9ebb'; ctx.fillRect(bx - 14, by + 2, 4, 3);
+        ctx.strokeStyle = 'rgba(70, 70, 90, 0.4)'; ctx.lineWidth = 0.8; ctx.beginPath();
+        let piku = isDead ? 0 : Math.sin(time / 60) * 0.8;
+        ctx.moveTo(bx - 10, by + 3); ctx.lineTo(bx - 32, by - 1 + piku);
+        ctx.moveTo(bx - 10, by + 4); ctx.lineTo(bx - 35, by + 5 - piku);
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffccd5';
+        if (nezumiState === 'eating') {
+            ctx.fillStyle = '#ffb703'; ctx.fillRect(bx - 2, by + 14, 12, 10);
+            ctx.fillStyle = '#ffccd5'; ctx.fillRect(bx - 4, by + 14, 4, 4); ctx.fillRect(bx + 8, by + 14, 4, 4);
+        } else {
+            ctx.fillRect(bx + 4, by + 15, 5, 4); ctx.fillRect(bx + 14, by + 15, 4, 4);
+        }
+        ctx.fillRect(bx + 8, by + 23, 6, 3);
+    }
+
+    function showScenario(key) {
+        if(isDead) return;
+        const s = scenarios[key];
+        
+        if (key === 'start' && nezumiName) {
+            document.getElementById('dialogue-text').textContent = `「ボク、今日からきみの ${nezumiName} だよ！なかよし度が増えると、もっとハッピーになれるんだ。きみのこといっぱい教えてね！」`;
+        } else {
+            document.getElementById('dialogue-text').textContent = s.text;
+        }
+
+        if (s.state) { nezumiState = s.state; setTimeout(() => { if(!isDead) nezumiState = 'normal'; }, 2500); }
+        if (s.loveBonus) { let oldLove = love; love += s.loveBonus; checkMilestones(oldLove, love); }
+
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        s.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'btn'; btn.textContent = opt.text;
+            btn.onclick = () => { showScenario(opt.next); saveGame(); updateUI(); };
+            container.appendChild(btn);
+        });
+    }
+
+    // 起動処理
+    updateCarOption();
+    if (isDead) { triggerDeath(); } else if (nezumiName) { showScenario('start'); }
+    updateUI();
+    runLoop();
+    function runLoop() { drawPremiumRealPixel(); requestAnimationFrame(runLoop); }
+</script>
+</body>
+</html>
