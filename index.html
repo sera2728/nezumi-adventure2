@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🐹 ねずみのほっこりルーム</title>
+    <title>🐹 ねずみのほっこりルーム Premium</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            background: #1e1e2f;
+            background: #0d0d1a;
             color: #e0e0ff;
             display: flex;
             justify-content: center;
@@ -16,94 +16,98 @@
             min-height: 100vh;
         }
         #game-container {
-            width: 340px;
-            background: #2a2a40;
-            border: 3px solid #4e4e70;
-            border-radius: 20px;
-            padding: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 350px;
+            background: #161626;
+            border: 2px solid #2d2d44;
+            border-radius: 24px;
+            padding: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.7);
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 16px;
         }
         /* ステータスバー */
         #status-bar {
             display: flex;
             justify-content: space-between;
-            background: #1a1a2e;
-            padding: 8px 12px;
-            border-radius: 10px;
-            font-size: 12px;
+            background: #090911;
+            padding: 10px 16px;
+            border-radius: 14px;
+            font-size: 13px;
+            border: 1px solid #1f1f33;
         }
-        .status-item { display: flex; align-items: center; gap: 4px; }
+        .status-item { display: flex; align-items: center; gap: 6px; }
         .val { color: #ffb703; font-weight: bold; }
 
-        /* お部屋画面（キャンバス） */
+        /* お部屋画面（超リアル描写キャンバス） */
         #room-viewport {
             position: relative;
             width: 100%;
-            height: 200px;
-            background: #3d3d5c;
-            border-radius: 12px;
-            border: 2px solid #1a1a2e;
+            height: 220px;
+            background: #090911;
+            border-radius: 16px;
+            border: 1px solid #2d2d44;
             overflow: hidden;
         }
-        canvas #room-canvas {
+        canvas#room-canvas {
             display: block;
         }
 
         /* 会話ウィンドウ */
         #dialogue-box {
-            background: #1a1a2e;
-            border: 2px solid #4e4e70;
-            border-radius: 12px;
-            padding: 12px;
-            min-height: 75px;
+            background: #090911;
+            border: 1px solid #2d2d44;
+            border-radius: 16px;
+            padding: 14px;
+            min-height: 85px;
         }
         #speaker-name {
-            font-size: 11px;
-            color: #88ccff;
-            margin-bottom: 4px;
+            font-size: 12px;
+            color: #ff758f;
+            margin-bottom: 6px;
             font-weight: bold;
+            letter-spacing: 1px;
         }
         #dialogue-text {
             font-size: 13px;
-            line-height: 1.5;
-            color: #ffffff;
+            line-height: 1.6;
+            color: #e2e8f0;
         }
 
         /* 選択肢・アクションエリア */
         #action-area {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 8px;
         }
         .btn {
-            background: #4e4e70;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
+            background: #212135;
+            color: #f1f5f9;
+            border: 1px solid #31314d;
+            padding: 12px;
+            border-radius: 12px;
             cursor: pointer;
             font-size: 13px;
             text-align: left;
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
-        .btn:hover { background: #64648c; }
-        .btn:active { background: #3a3a54; }
+        .btn:hover { background: #2d2d49; border-color: #4e4e75; }
+        .btn:active { background: #171726; }
         
         .action-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 6px;
+            gap: 8px;
         }
         .act-btn {
             text-align: center;
-            background: #ffb703;
-            color: #1e1e2f;
+            background: linear-gradient(135deg, #ffb703, #ee9b00);
+            color: #0d0d1a;
             font-weight: bold;
+            border: none;
         }
-        .act-btn:hover { background: #ffc947; }
+        .act-btn:hover { background: linear-gradient(135deg, #ffc947, #ffb703); transform: translateY(-1px); }
+        .act-btn:active { transform: translateY(0); }
     </style>
 </head>
 <body>
@@ -115,16 +119,16 @@
     </div>
 
     <div id="room-viewport">
-        <canvas id="room-canvas" width="306" height="200"></canvas>
+        <canvas id="room-canvas" width="310" height="220"></canvas>
     </div>
 
     <div id="dialogue-box">
-        <div id="speaker-name">ネズミ</div>
+        <div id="speaker-name">白ネズミ</div>
         <div id="dialogue-text">「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」</div>
     </div>
 
     <div id="action-area">
-        <div id="options-container" style="display: flex; flex-direction: column; gap: 6px;">
+        <div id="options-container" style="display: flex; flex-direction: column; gap: 8px;">
             </div>
         <div class="action-row">
             <button class="btn act-btn" onclick="giveCheese()">🧀 チーズをあげる</button>
@@ -137,15 +141,12 @@
     const canvas = document.getElementById('room-canvas');
     const ctx = canvas.getContext('2d');
 
-    // ゲームデータ
     let love = 10;
     let cheese = 3;
-    let nezumiState = 'normal'; // normal, happy, eating, sleep
-    let nezumiX = 130;
-    let nezumiY = 110;
-    let pulseFactor = 0; // アニメーション用
+    let nezumiState = 'normal'; // normal, happy, eating
+    let blinkTimer = 0;
+    let isBlinking = false;
 
-    // 会話のシナリオデータ
     const scenarios = {
         start: {
             text: "「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」",
@@ -155,7 +156,7 @@
             ]
         },
         condition: {
-            text: "「きみが会いに来てくれたから、すっごく元気が出たよ！えへへ。」",
+            text: "「きみが会いに来てくれたから、すっごく元気が出たよ！お耳がピクピクしちゃう。えへへ。」",
             loveBonus: 5,
             state: 'happy',
             options: [{ text: "「それはよかった！」", next: "start" }]
@@ -181,105 +182,214 @@
         }
     };
 
-    // ネズミ（ピクセルアート風）を描画する関数
-    function drawNezumi() {
+    // リアルな毛並み・グラデーションを描写する関数
+    function drawRealNezumi() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // 背景：ほっこりしたお部屋の床と壁
-        ctx.fillStyle = '#4a4a6a'; // 壁
-        ctx.fillRect(0, 0, canvas.width, 140);
-        ctx.fillStyle = '#6e5040'; // 木の床
-        ctx.fillRect(0, 140, canvas.width, 60);
+        // 背景：ほっこりしたお部屋（リアルな陰影のグラデーション）
+        let wallGrad = ctx.createLinearGradient(0, 0, 0, 150);
+        wallGrad.addColorStop(0, '#1a1a2e');
+        wallGrad.addColorStop(1, '#2d2d44');
+        ctx.fillStyle = wallGrad;
+        ctx.fillRect(0, 0, canvas.width, 150);
+
+        let floorGrad = ctx.createLinearGradient(0, 150, 0, 220);
+        floorGrad.addColorStop(0, '#3e2723');
+        floorGrad.addColorStop(1, '#1a0f0d');
+        ctx.fillStyle = floorGrad;
+        ctx.fillRect(0, 150, canvas.width, 70);
         
-        // 敷物（ラグ）
-        ctx.fillStyle = '#9ece6a';
-        ctx.beginPath();
-        ctx.ellipse(153, 160, 60, 20, 0, 0, Math.PI * 2);
-        ctx.fill();
+        // 敷物（ソフトラグ）
+        let rugGrad = ctx.createRadialGradient(155, 170, 10, 155, 170, 70);
+        rugGrad.addColorStop(0, '#556b2f');
+        rugGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = rugGrad;
+        ctx.save();
+        ctx.transform(1, 0, 0, 0.3, 0, 120);
+        ctx.beginPath(); ctx.arc(155, 170, 70, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
 
-        // 呼吸アニメーションの計算
-        pulseFactor = Math.sin(Date.now() / 200) * 2;
+        // アニメーション用タイマー
+        const time = Date.now();
+        const breath = Math.sin(time / 250) * 1.5; // 呼吸の上下
+        const twitch = Math.sin(time / 80) * (Math.random() < 0.02 ? 1 : 0); // お髭のピクピク
 
-        // 32x32ピクセルアートをシミュレート（ドットの拡大描画）
-        const pixelSize = 3; 
-        
-        // 耳
-        ctx.fillStyle = '#ff9ebb'; // 耳の内側ピンク
-        ctx.fillRect(nezumiX - 12, nezumiY - 12 + pulseFactor/2, 9, 9);
-        ctx.fillRect(nezumiX + 24, nezumiY - 12 + pulseFactor/2, 9, 9);
-        
-        ctx.fillStyle = '#a9a9b3'; // 毛並みグレー
-        ctx.fillRect(nezumiX - 15, nezumiY - 9 + pulseFactor/2, 6, 9);
-        ctx.fillRect(nezumiX + 30, nezumiY - 9 + pulseFactor/2, 6, 9);
-
-        // 体と頭
-        ctx.fillRect(nezumiX - 6, nezumiY - 3 + pulseFactor, 33, 36); // 胴体
-        ctx.fillRect(nezumiX, nezumiY - 9 + pulseFactor/2, 21, 15); // 頭
-
-        // 白いお腹
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(nezumiX + 3, nezumiY + 12 + pulseFactor, 15, 18);
-
-        // 状態に応じた顔の描画
-        ctx.fillStyle = '#222222'; // 目と鼻の黒
-        if (nezumiState === 'happy') {
-            // にっこりおめめ (^^)
-            ctx.strokeStyle = '#222222';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(nezumiX + 4, nezumiY, 2, Math.PI, 0, false);
-            ctx.arc(nezumiX + 16, nezumiY, 2, Math.PI, 0, false);
-            ctx.stroke();
-            
-            // 赤みのあるほっぺ
-            ctx.fillStyle = '#ff6b6b';
-            ctx.fillRect(nezumiX - 3, nezumiY + 3, 4, 4);
-            ctx.fillRect(nezumiX + 20, nezumiY + 3, 4, 4);
-        } else if (nezumiState === 'sleep') {
-            // すやすや目 (--)
-            ctx.fillRect(nezumiX + 2, nezumiY, 5, 2);
-            ctx.fillRect(nezumiX + 14, nezumiY, 5, 2);
-        } else {
-            // 通常のまるいおめめ
-            ctx.fillRect(nezumiX + 3, nezumiY - 2, 4, 4);
-            ctx.fillRect(nezumiX + 14, nezumiY - 2, 4, 4);
+        // まばたきのロジック
+        blinkTimer++;
+        if (blinkTimer > 100) {
+            isBlinking = true;
+            if (blinkTimer > 105) {
+                isBlinking = false;
+                blinkTimer = 0;
+            }
         }
 
-        // 鼻と口
-        ctx.fillStyle = '#ff6b6b';
-        ctx.fillRect(nezumiX + 9, nezumiY + 3, 3, 3); // 鼻
-        
-        // ひげ
-        ctx.strokeStyle = '#d0d0d0';
-        ctx.lineWidth = 1;
+        const cx = 155; // 中心X
+        const cy = 125 + breath; // 中心Y
+
+        // 1. リアルな長い尻尾
+        ctx.strokeStyle = '#ffccd5';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
         ctx.beginPath();
-        ctx.moveTo(nezumiX - 4, nezumiY + 5); ctx.lineTo(nezumiX - 14, nezumiY + 3);
-        ctx.moveTo(nezumiX - 4, nezumiY + 8); ctx.lineTo(nezumiX - 14, nezumiY + 9);
-        ctx.moveTo(nezumiX + 25, nezumiY + 5); ctx.lineTo(nezumiX + 35, nezumiY + 3);
-        ctx.moveTo(nezumiX + 25, nezumiY + 8); ctx.lineTo(nezumiX + 35, nezumiY + 9);
+        ctx.moveTo(cx + 20, cy + 30);
+        ctx.bezierCurveTo(cx + 50, cy + 40, cx + 70, cy + 10, cx + 65, cy - 10 + Math.sin(time/500)*3);
         ctx.stroke();
 
-        // チーズを食べているときのエフェクト
-        if (nezumiState === 'eating') {
-            ctx.fillStyle = '#ffb703';
-            ctx.fillRect(nezumiX + 6, nezumiY + 15, 9, 9); // 手元のチーズ
-            // もぐもぐの星エフェクト
+        // 2. モフモフな体（多層グラデーションでリアルな毛並みの立体感を表現）
+        let bodyGrad = ctx.createRadialGradient(cx, cy + 10, 5, cx, cy + 10, 45);
+        bodyGrad.addColorStop(0, '#ffffff');
+        bodyGrad.addColorStop(0.8, '#f4f4f9');
+        bodyGrad.addColorStop(1, '#d9d9e3');
+        ctx.fillStyle = bodyGrad;
+        
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 12, 40, 35, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 3. 大きなピンクの耳（リアルなファンシーラットの特徴）
+        // 左耳
+        drawEar(cx - 28, cy - 25, true, nezumiState === 'happy' ? Math.sin(time/100)*2 : 0);
+        // 右耳
+        drawEar(cx + 28, cy - 25, false, nezumiState === 'happy' ? -Math.sin(time/100)*2 : 0);
+
+        // 4. 頭部
+        let headGrad = ctx.createRadialGradient(cx, cy - 10, 5, cx, cy - 10, 30);
+        headGrad.addColorStop(0, '#ffffff');
+        headGrad.addColorStop(0.8, '#f4f4f9');
+        headGrad.addColorStop(1, '#e1e1ea');
+        ctx.fillStyle = headGrad;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 10, 28, 26, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 5. 潤んだ黒い瞳（リアルな光彩反射）
+        ctx.fillStyle = '#111111';
+        const eyeY = cy - 12;
+        const eyeXOffset = 13;
+
+        if (isBlinking || nezumiState === 'sleep') {
+            // リアルな閉じ目（細い線）
+            ctx.strokeStyle = '#9999a3';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(cx - eyeXOffset - 4, eyeY); ctx.lineTo(cx - eyeXOffset + 4, eyeY);
+            ctx.moveTo(cx + eyeXOffset - 4, eyeY); ctx.lineTo(cx + eyeXOffset + 4, eyeY);
+            ctx.stroke();
+        } else if (nezumiState === 'happy') {
+            // にっこり（リアルに細められた、嬉しそうな目）
+            ctx.strokeStyle = '#111111';
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.arc(cx - eyeXOffset, eyeY + 2, 4, Math.PI, 0, false);
+            ctx.arc(cx + eyeXOffset, eyeY + 2, 4, Math.PI, 0, false);
+            ctx.stroke();
+        } else {
+            // 通常のくりくりしたリアルな黒い目
+            // 左目
+            ctx.beginPath(); ctx.arc(cx - eyeXOffset, eyeY, 4.5, 0, Math.PI*2); ctx.fill();
+            // 右目
+            ctx.beginPath(); ctx.arc(cx + eyeXOffset, eyeY, 4.5, 0, Math.PI*2); ctx.fill();
+            // ハイライト（輝き）
             ctx.fillStyle = '#ffffff';
-            if (Math.floor(Date.now() / 150) % 2 === 0) {
-                ctx.fillText("✨", nezumiX - 15, nezumiY);
-                ctx.fillText("✨", nezumiX + 32, nezumiY + 20);
+            ctx.beginPath(); ctx.arc(cx - eyeXOffset - 1.5, eyeY - 1.5, 1.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx + eyeXOffset - 1.5, eyeY - 1.5, 1.5, 0, Math.PI*2); ctx.fill();
+        }
+
+        // 6. ピンクの可愛い鼻とマズル
+        let noseGrad = ctx.createRadialGradient(cx, cy - 2, 1, cx, cy - 2, 5);
+        noseGrad.addColorStop(0, '#ffb3c1');
+        noseGrad.addColorStop(1, '#ff85a1');
+        ctx.fillStyle = noseGrad;
+        ctx.beginPath();
+        ctx.moveTo(cx - 2.5, cy - 4);
+        ctx.lineTo(cx + 2.5, cy - 4);
+        ctx.lineTo(cx, cy - 1);
+        ctx.closePath();
+        ctx.fill();
+
+        // うっすらとしたリアルなピンクのほっぺ（血色）
+        let cheekGradL = ctx.createRadialGradient(cx - 18, cy, 2, cx - 18, cy, 10);
+        cheekGradL.addColorStop(0, 'rgba(255, 133, 161, 0.25)');
+        cheekGradL.addColorStop(1, 'transparent');
+        ctx.fillStyle = cheekGradL; ctx.beginPath(); ctx.arc(cx - 18, cy, 10, 0, Math.PI*2); ctx.fill();
+
+        let cheekGradR = ctx.createRadialGradient(cx + 18, cy, 2, cx + 18, cy, 10);
+        cheekGradR.addColorStop(0, 'rgba(255, 133, 161, 0.25)');
+        cheekGradR.addColorStop(1, 'transparent');
+        ctx.fillStyle = cheekGradR; ctx.beginPath(); ctx.arc(cx + 18, cy, 10, 0, Math.PI*2); ctx.fill();
+
+        // 7. リアルで細い綺麗な「お髭」
+        ctx.strokeStyle = 'rgba(240, 240, 255, 0.6)';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        // 左ひげ
+        ctx.moveTo(cx - 6, cy - 1); ctx.lineTo(cx - 38, cy - 4 + twitch);
+        ctx.moveTo(cx - 6, cy + 1); ctx.lineTo(cx - 42, cy + 2 - twitch);
+        ctx.moveTo(cx - 6, cy + 3); ctx.lineTo(cx - 36, cy + 9 + twitch);
+        // 右ひげ
+        ctx.moveTo(cx + 6, cy - 1); ctx.lineTo(cx + 38, cy - 4 - twitch);
+        ctx.moveTo(cx + 6, cy + 1); ctx.lineTo(cx + 42, cy + 2 + twitch);
+        ctx.moveTo(cx + 6, cy + 3); ctx.lineTo(cx + 36, cy + 9 - twitch);
+        ctx.stroke();
+
+        // 8. 小さな前足
+        ctx.fillStyle = '#ffccd5';
+        if (nezumiState === 'eating') {
+            // チーズを持って幸せそうに食べるモーション
+            ctx.fillStyle = '#ffb703'; // チーズ
+            ctx.beginPath(); ctx.moveTo(cx - 6, cy + 12); ctx.lineTo(cx + 6, cy + 12); ctx.lineTo(cx, cy + 22); ctx.closePath(); ctx.fill();
+            
+            ctx.fillStyle = '#ffccd5'; // おてて
+            ctx.beginPath(); ctx.arc(cx - 6, cy + 14 + Math.sin(time/100), 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx + 6, cy + 14 + Math.sin(time/100), 3, 0, Math.PI*2); ctx.fill();
+            
+            // もぐもぐハートエフェクト
+            ctx.fillStyle = '#ff4d6d';
+            ctx.font = '12px sans-serif';
+            if (Math.floor(time / 200) % 2 === 0) {
+                ctx.fillText("❤️", cx - 35, cy - 15);
+                ctx.fillText("❤️", cx + 25, cy + 25);
             }
+        } else {
+            // 通常のおてて
+            ctx.beginPath(); ctx.ellipse(cx - 10, cy + 16, 3.5, 5, Math.PI/6, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(cx + 10, cy + 16, 3.5, 5, -Math.PI/6, 0, Math.PI*2); ctx.fill();
         }
     }
 
-    // シナリオ進行と選択肢ボタンの生成
+    // リアルな耳を描写する補助関数
+    function drawEar(x, y, isLeft, rotation) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation * Math.PI / 180);
+        
+        // 外側の白い毛並み
+        ctx.fillStyle = '#e1e1ea';
+        ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI*2); ctx.fill();
+        
+        // 内側のリアルな血色のピンク
+        let innerGrad = ctx.createRadialGradient(0, 2, 2, 0, 2, 11);
+        innerGrad.addColorStop(0, '#ffccd5');
+        innerGrad.addColorStop(0.7, '#ffb3c1');
+        innerGrad.addColorStop(1, '#e8a5b5');
+        ctx.fillStyle = innerGrad;
+        ctx.beginPath(); ctx.arc(isLeft ? 2 : -2, 1, 11, 0, Math.PI*2); ctx.fill();
+        
+        ctx.restore();
+    }
+
     function showScenario(key) {
         const s = scenarios[key];
         document.getElementById('dialogue-text').textContent = s.text;
         
         if (s.state) {
             nezumiState = s.state;
-            setTimeout(() => { nezumiState = 'normal'; }, 2000);
+            setTimeout(() => { nezumiState = 'normal'; }, 2500);
         }
         if (s.loveBonus) {
             love += s.loveBonus;
@@ -287,7 +397,7 @@
         }
 
         const container = document.getElementById('options-container');
-        container.innerHTML = ''; // クリア
+        container.innerHTML = '';
 
         s.options.forEach(opt => {
             const btn = document.createElement('button');
@@ -298,7 +408,6 @@
         });
     }
 
-    // アクション：チーズをあげる
     function giveCheese() {
         if (cheese > 0) {
             cheese--;
@@ -307,48 +416,45 @@
             document.getElementById('love-val').textContent = love;
             
             nezumiState = 'eating';
-            document.getElementById('dialogue-text').textContent = "ネズミ「わぁぁ！大好きなチーズだ！もぐもぐ…すっごく美味しいよ、ありがとう！」";
+            document.getElementById('dialogue-text').textContent = "白ネズミ「わぁぁ！大好きなチーズだ！両手で持って…もぐもぐ。すっごく美味しいよ、ありがとう！」";
             
             setTimeout(() => {
                 nezumiState = 'normal';
                 showScenario('start');
-            }, 3000);
+            }, 3500);
         } else {
-            document.getElementById('dialogue-text').textContent = "ネズミ「チーズなくなっちゃったみたい。きみがいてくれるだけでボクは満足だよ！」";
+            document.getElementById('dialogue-text').textContent = "白ネズミ「チーズなくなっちゃったみたい。きみが側にいてくれるだけで、ボクは胸がいっぱいだよ。」";
         }
     }
 
-    // アクション：なでなでする
     function strokeHead() {
         love += 3;
         document.getElementById('love-val').textContent = love;
         nezumiState = 'happy';
-        document.getElementById('dialogue-text').textContent = "ネズミ「あはは、なでなで むずがゆいけど、あったかくて気持ちいいなぁ…」";
+        document.getElementById('dialogue-text').textContent = "白ネズミ「あはは、きみの手、おっきくてあったかいねぇ…頭をなでられるの、大好き。」";
         
-        // 3回に1回チーズを見つけてくれるほっこりイベント
-        if (Math.random() < 0.33) {
+        if (Math.random() < 0.35) {
             cheese++;
             document.getElementById('cheese-val').textContent = cheese;
             setTimeout(() => {
-                document.getElementById('dialogue-text').textContent = "ネズミ「あ！お部屋のすみにチーズが落ちてるのを見つけたよ！きみにあげる！」";
-            }, 1500);
+                document.getElementById('dialogue-text').textContent = "白ネズミ「あ！お部屋のすみにクッキーのかけらを見つけたよ！はい、きみにプレゼント！」";
+            }, 1800);
         }
 
         setTimeout(() => {
             nezumiState = 'normal';
             showScenario('start');
-        }, 3000);
+        }, 3500);
     }
 
-    // 定期的な描画ループ（アニメーション用）
-    function loop() {
-        drawNezumi();
-        requestAnimationFrame(loop);
+    function mainLoop() {
+        drawRealNezumi();
+        requestAnimationFrame(mainLoop);
     }
 
-    // ゲーム開始
+    // 初期化
     showScenario('start');
-    loop();
+    mainLoop();
 </script>
 </body>
 </html>
