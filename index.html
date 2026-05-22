@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🐹 ねずみのほっこりルーム Real</title>
+    <title><h3>🐹 ねずみのほっこりルーム Ultimate</h3></title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body {
@@ -26,7 +26,6 @@
             flex-direction: column;
             gap: 16px;
         }
-        /* ステータスバー */
         #status-bar {
             display: flex;
             justify-content: space-between;
@@ -39,38 +38,19 @@
         .status-item { display: flex; align-items: center; gap: 6px; }
         .val { color: #ffb703; font-weight: bold; }
 
-        /* お部屋画面（リアルネズミ画像表示エリア） */
         #room-viewport {
             position: relative;
             width: 100%;
             height: 220px;
-            background: linear-gradient(to bottom, #1a1a2e, #2d2d44);
+            background: #090911;
             border-radius: 16px;
             border: 1px solid #2d2d44;
             overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
-            padding-bottom: 10px;
         }
-        
-        /* 💡 ここがポイント！リアルなネズミの画像 */
-        #nezumi-img {
-            width: 180px;
-            height: 180px;
-            object-fit: contain;
-            transition: transform 0.1s ease;
-            /* 常に生きてるっぽい呼吸の動きをCSSで再現 */
-            animation: breathe 3s ease-in-out infinite;
+        canvas#room-canvas {
+            display: block;
         }
 
-        @keyframes breathe {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.03) translateY(-2px); }
-            100% { transform: scale(1); }
-        }
-
-        /* 会話ウィンドウ */
         #dialogue-box {
             background: #090911;
             border: 1px solid #2d2d44;
@@ -91,7 +71,6 @@
             color: #e2e8f0;
         }
 
-        /* 選択肢・アクションエリア */
         #action-area {
             display: flex;
             flex-direction: column;
@@ -124,7 +103,6 @@
             border: none;
         }
         .act-btn:hover { background: linear-gradient(135deg, #ffc947, #ffb703); transform: translateY(-1px); }
-        .act-btn:active { transform: translateY(0); }
     </style>
 </head>
 <body>
@@ -136,7 +114,7 @@
     </div>
 
     <div id="room-viewport">
-        <img id="nezumi-img" src="https://images.unsplash.com/photo-1628853315213-26ebfb63ddb6?auto=format&fit=crop&w=400&q=80" alt="リアルな白ネズミ">
+        <canvas id="room-canvas" width="310" height="220"></canvas>
     </div>
 
     <div id="dialogue-box">
@@ -145,8 +123,7 @@
     </div>
 
     <div id="action-area">
-        <div id="options-container" style="display: flex; flex-direction: column; gap: 8px;">
-            </div>
+        <div id="options-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
         <div class="action-row">
             <button class="btn act-btn" onclick="giveCheese()">🧀 チーズをあげる</button>
             <button class="btn act-btn" onclick="strokeHead()">👋 なでなでする</button>
@@ -155,16 +132,14 @@
 </div>
 
 <script>
+    const canvas = document.getElementById('room-canvas');
+    const ctx = canvas.getContext('2d');
+
     let love = 10;
     let cheese = 3;
-    const nezumiImg = document.getElementById('nezumi-img');
-
-    // 💡 状態にあわせて、本物のネズミの画像を切り替える用のURLリンク
-    const nezumiPics = {
-        normal: "https://images.unsplash.com/photo-1628853315213-26ebfb63ddb6?auto=format&fit=crop&w=400&q=80", // くりくりおめめのリアル白ネズミ
-        happy: "https://images.unsplash.com/photo-1425082661705-1834bfd09dca?auto=format&fit=crop&w=400&q=80", // 嬉しそうな小動物の顔
-        eating: "https://images.unsplash.com/photo-1542444459-db37a5da9d5f?auto=format&fit=crop&w=400&q=80"  // もぐもぐしてる横顔
-    };
+    let nezumiState = 'normal'; // normal, happy, eating
+    let blinkTimer = 0;
+    let isBlinking = false;
 
     const scenarios = {
         start: {
@@ -175,7 +150,7 @@
             ]
         },
         condition: {
-            text: "「きみが会いに来てくれたから、すっごく元気が出たよ！お耳がピクピクしちゃう。えへへ。」",
+            text: "「きみが会いに来てくれたから、すっごく元気が出たよ！えへへ。」",
             loveBonus: 5,
             state: 'happy',
             options: [{ text: "「それはよかった！」", next: "start" }]
@@ -194,26 +169,177 @@
             options: [{ text: "「ありがとう！」", next: "start" }]
         },
         sweet: {
-            text: "「お菓子！いいよねぇ、クッキーのひとなみだでもボクにとっては大ごちそうなんだ！」",
+            text: "「お菓子！いいよねぇ、クッキーのひとかけらでもボクにとっては大ごちそうなんだ！」",
             loveBonus: 8,
             state: 'happy',
             options: [{ text: "「今度分けてあげるね」", next: "start" }]
         }
     };
 
+    // 💡 究極のモフモフ毛並み（ファーレンダリング）システム
+    function drawFurBall(x, y, rX, rY, furLength, density, colorBase) {
+        ctx.save();
+        ctx.strokeStyle = colorBase;
+        ctx.lineWidth = 0.5;
+        
+        // 何千本もの細いリアルな毛並みを放射状に重ねて描画する
+        for (let i = 0; i < density; i++) {
+            let angle = (i / density) * Math.PI * 2;
+            
+            // 毛並みのランダムなばらつき（これでリアルな質感になる）
+            let noise = Math.sin(i * 15.3) * 3;
+            let currentLength = furLength + noise;
+            
+            // 体の楕円状のベース位置
+            let startX = x + Math.cos(angle) * rX;
+            let startY = y + Math.sin(angle) * rY;
+            
+            // 毛の生える方向（外側へ向けて少し曲げる）
+            let endX = x + Math.cos(angle) * (rX + currentLength);
+            let endY = y + Math.sin(angle) * (rY + currentLength) + 1; // 重力でわずかに下げる
+            
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    function drawUltimateNezumi() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 背景（リアルなグラデーションの部屋）
+        let roomGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        roomGrad.addColorStop(0, '#10101f');
+        roomGrad.addColorStop(0.65, '#1b1b2f');
+        roomGrad.addColorStop(0.65, '#2b1a11'); // 木の床
+        roomGrad.addColorStop(1, '#140c08');
+        ctx.fillStyle = roomGrad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const time = Date.now();
+        const breath = Math.sin(time / 280) * 1.5; // 呼吸の上下運動
+
+        // まばたきカウント
+        blinkTimer++;
+        if (blinkTimer > 120) {
+            isBlinking = true;
+            if (blinkTimer > 125) { isBlinking = false; blinkTimer = 0; }
+        }
+
+        const cx = 155;
+        const cy = 125 + breath;
+
+        // 1. リアルな質感のピンクの長い尻尾
+        ctx.strokeStyle = 'rgba(255, 194, 205, 0.7)';
+        ctx.lineWidth = 3.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(cx + 20, cy + 30);
+        ctx.bezierCurveTo(cx + 55, cy + 35, cx + 75, cy + 5, cx + 70, cy - 15 + Math.sin(time/400)*3);
+        ctx.stroke();
+
+        // 2. リアルな質感の耳（ピンクの内側と白い毛並みの外側）
+        const drawEarReal = (earX, earY, isLeft) => {
+            ctx.fillStyle = '#e5e5f0'; // 耳の裏
+            ctx.beginPath(); ctx.arc(earX, earY, 16, 0, Math.PI*2); ctx.fill();
+            // 内側の皮膚
+            let earGrad = ctx.createRadialGradient(earX, earY+2, 2, earX, earY+2, 12);
+            earGrad.addColorStop(0, '#ffccd5');
+            earGrad.addColorStop(0.8, '#ffa6b7');
+            earGrad.addColorStop(1, 'transparent');
+            ctx.fillStyle = earGrad;
+            ctx.beginPath(); ctx.arc(earX, earY+2, 12, 0, Math.PI*2); ctx.fill();
+        };
+        drawEarReal(cx - 30, cy - 25, true);
+        drawEarReal(cx + 30, cy - 25, false);
+
+        // 3. 胴体の毛並み（内側から外側へグラデーション密度のファーを描画）
+        drawFurBall(cx, cy + 15, 38, 30, 8, 350, 'rgba(230, 230, 240, 0.4)'); // 外側の薄い毛
+        drawFurBall(cx, cy + 15, 34, 26, 6, 400, 'rgba(255, 255, 255, 0.8)'); // 本毛
+        
+        // 4. 頭の毛並み
+        drawFurBall(cx, cy - 8, 26, 24, 6, 300, 'rgba(230, 230, 240, 0.4)');
+        drawFurBall(cx, cy - 8, 22, 20, 5, 350, 'rgba(255, 255, 255, 0.9)');
+
+        // 内側のソリッドな肉付け（透けないように中を白く塗る）
+        ctx.fillStyle = '#fcfcfc';
+        ctx.beginPath(); ctx.ellipse(cx, cy + 15, 35, 28, 0, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx, cy - 8, 23, 21, 0, 0, Math.PI*2); ctx.fill();
+
+        // 5. リアルな黒い瞳（絶対に線で繋がらないリアル独立描写）
+        ctx.fillStyle = '#0f0f14';
+        const exOffset = 12;
+        const ey = cy - 10;
+
+        if (isBlinking || nezumiState === 'sleep') {
+            ctx.strokeStyle = '#8a8a99';
+            ctx.lineWidth = 2;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(cx - exOffset - 4, ey); ctx.lineTo(cx - exOffset + 4, ey);
+            ctx.moveTo(cx + exOffset - 4, ey); ctx.lineTo(cx + exOffset + 4, ey);
+            ctx.stroke();
+        } else if (nezumiState === 'happy') {
+            // 嬉しそうに細められたリアルな半月目の形
+            ctx.beginPath(); ctx.arc(cx - exOffset, ey + 2, 4, Math.PI, 0, false); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx + exOffset, ey + 2, 4, Math.PI, 0, false); ctx.fill();
+        } else {
+            // 通常の潤んだ大きな目
+            ctx.beginPath(); ctx.arc(cx - exOffset, ey, 4.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx + exOffset, ey, 4.5, 0, Math.PI*2); ctx.fill();
+            // 本物っぽい光の映り込み（ハイライト）
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath(); ctx.arc(cx - exOffset - 1.5, ey - 1.5, 1.2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx + exOffset - 1.5, ey - 1.5, 1.2, 0, Math.PI*2); ctx.fill();
+        }
+
+        // 6. リアルなピンクの鼻とマズル
+        ctx.fillStyle = '#ff9ebb';
+        ctx.beginPath();
+        ctx.moveTo(cx - 2, cy - 1); ctx.lineTo(cx + 2, cy - 1); ctx.lineTo(cx, cy + 1.5);
+        ctx.closePath(); ctx.fill();
+
+        // リアルなヒゲ（非常に細く、シャープに描く）
+        ctx.strokeStyle = 'rgba(200, 200, 220, 0.4)';
+        ctx.lineWidth = 0.7;
+        ctx.beginPath();
+        let piku = Math.sin(time / 70) * (nezumiState === 'happy' ? 2 : 0.5);
+        ctx.moveTo(cx - 4, cy + 1); ctx.lineTo(cx - 36, cy - 2 + piku);
+        ctx.moveTo(cx - 4, cy + 3); ctx.lineTo(cx - 40, cy + 4 - piku);
+        ctx.moveTo(cx + 4, cy + 1); ctx.lineTo(cx + 36, cy - 2 - piku);
+        ctx.moveTo(cx + 4, cy + 3); ctx.lineTo(cx + 40, cy + 4 + piku);
+        ctx.stroke();
+
+        // 7. 手元のシチュエーション（チーズおねだり・食べる）
+        ctx.fillStyle = '#ffccd5'; // 前足ピンク
+        if (nezumiState === 'eating') {
+            // 黄色い立体的なチーズの塊を描写
+            ctx.fillStyle = '#ffb703';
+            ctx.beginPath(); ctx.moveTo(cx - 8, cy + 16); ctx.lineTo(cx + 8, cy + 14); ctx.lineTo(cx, cy + 26); ctx.closePath(); ctx.fill();
+            // チーズの穴
+            ctx.fillStyle = '#fb8500';
+            ctx.beginPath(); ctx.arc(cx - 2, cy + 18, 1.5, 0, Math.PI*2); ctx.fill();
+            
+            // チーズを掴む小さなおてて
+            ctx.fillStyle = '#ffccd5';
+            ctx.beginPath(); ctx.arc(cx - 6, cy + 16, 3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(cx + 6, cy + 16, 3, 0, Math.PI*2); ctx.fill();
+        } else {
+            // 通常時のちょこんとした前足
+            ctx.beginPath(); ctx.ellipse(cx - 12, cy + 16, 3, 4, Math.PI/4, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(cx + 12, cy + 16, 3, 4, -Math.PI/4, 0, Math.PI*2); ctx.fill();
+        }
+    }
+
     function showScenario(key) {
         const s = scenarios[key];
         document.getElementById('dialogue-text').textContent = s.text;
         
-        if (s.state && nezumiPics[s.state]) {
-            // 状態に合わせてリアル画像を切り替え
-            nezumiImg.src = nezumiPics[s.state];
-            // ピョコッと動くリアクション
-            nezumiImg.style.transform = "scale(1.1) translateY(-5px)";
-            setTimeout(() => { 
-                nezumiImg.src = nezumiPics.normal; 
-                nezumiImg.style.transform = "scale(1) translateY(0)";
-            }, 2500);
+        if (s.state) {
+            nezumiState = s.state;
+            setTimeout(() => { nezumiState = 'normal'; }, 2500);
         }
         if (s.loveBonus) {
             love += s.loveBonus;
@@ -239,13 +365,11 @@
             document.getElementById('cheese-val').textContent = cheese;
             document.getElementById('love-val').textContent = love;
             
-            nezumiImg.src = nezumiPics.eating;
-            nezumiImg.style.transform = "scale(1.05)";
+            nezumiState = 'eating';
             document.getElementById('dialogue-text').textContent = "白ネズミ「わぁぁ！大好きなチーズだ！両手で持って…もぐもぐ。すっごく美味しいよ、ありがとう！」";
             
             setTimeout(() => {
-                nezumiImg.src = nezumiPics.normal;
-                nezumiImg.style.transform = "scale(1)";
+                nezumiState = 'normal';
                 showScenario('start');
             }, 3500);
         } else {
@@ -256,10 +380,7 @@
     function strokeHead() {
         love += 3;
         document.getElementById('love-val').textContent = love;
-        
-        nezumiImg.src = nezumiPics.happy;
-        // なでられて嬉しくて縮むようなエフェクト
-        nezumiImg.style.transform = "scale(0.95) translateY(4px)";
+        nezumiState = 'happy';
         document.getElementById('dialogue-text').textContent = "白ネズミ「あはは、きみの手、おっきくてあったかいねぇ…頭をなでられるの、大好き。」";
         
         if (Math.random() < 0.35) {
@@ -271,14 +392,19 @@
         }
 
         setTimeout(() => {
-            nezumiImg.src = nezumiPics.normal;
-            nezumiImg.style.transform = "scale(1)";
+            nezumiState = 'normal';
             showScenario('start');
         }, 3500);
     }
 
-    // 初期化
+    function renderLoop() {
+        drawUltimateNezumi();
+        requestAnimationFrame(renderLoop);
+    }
+
+    // ゲーム開始
     showScenario('start');
+    renderLoop();
 </script>
 </body>
 </html>
