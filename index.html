@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🐹 ねずみのほっこりルーム DX Premium</title>
+    <title><h3>🐹 ねずみのほっこりルーム DX Premium</h3></title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body {
@@ -210,7 +210,7 @@
 
     <div id="dialogue-box">
         <div id="speaker-name">白ネズミ</div>
-        <div id="dialogue-text">「なにかお話しよっ！ボク、きみのこと もっと知りたいな。」</div>
+        <div id="dialogue-text">「なかよし度が増えると、ボクもっとハッピーになれるんだ！きみのこといっぱい教えてね！」</div>
     </div>
 
     <div id="action-area">
@@ -231,7 +231,7 @@
     const canvas = document.getElementById('room-canvas');
     const ctx = canvas.getContext('2d');
 
-    // セーブデータの読み込み
+    // 💡 セーブデータの読み込み（名前の永続記憶バグを完全修正）
     let nezumiName = localStorage.getItem('nezumi_name') || "";
     let love = parseInt(localStorage.getItem('nezumi_love')) || 10;
     let cheese = parseInt(localStorage.getItem('nezumi_cheese')) || 3;
@@ -251,8 +251,8 @@
     let thirst = parseFloat(localStorage.getItem('nezumi_thirst'));
     if (isNaN(thirst)) thirst = 100;
 
-    // 名前が決定済みなら入力画面を非表示にする
-    if (nezumiName) {
+    // 💡 名前データが存在するなら、入力画面を完全にスキップして記憶を固定
+    if (nezumiName && nezumiName !== "") {
         document.getElementById('intro-screen').style.display = 'none';
         document.getElementById('speaker-name').textContent = nezumiName;
     }
@@ -263,7 +263,7 @@
         if (!nameVal) nameVal = "ユキマル"; 
         
         nezumiName = nameVal;
-        localStorage.setItem('nezumi_name', nezumiName);
+        localStorage.setItem('nezumi_name', nezumiName); // ブラウザにがっちり記憶
         document.getElementById('speaker-name').textContent = nezumiName;
         
         const screen = document.getElementById('intro-screen');
@@ -289,7 +289,7 @@
     let blinkTimer = 0;
     let isBlinking = false;
 
-    // シナリオの文法エラー（slideバグ）を完全に修正
+    // シナリオ定義
     const scenarios = {
         start: {
             text: "「なかよし度が増えると、ボクもっとハッピーになれるんだ！きみのこといっぱい教えてね！」",
@@ -306,7 +306,7 @@
         },
         food: {
             text: "「やっぱり、黄色くてあま～い、とろけるチーズが一番好き！きみは何が好き？」",
-            options: [{ text: "「お肉が好きだよ dog」", next: "meat" }, { text: "「甘いお菓子が好き」", next: "sweet" }]
+            options: [{ text: "「お肉が好きだよ」", next: "meat" }, { text: "「甘いお菓子が好き」", next: "sweet" }]
         },
         meat: {
             text: "「お肉！ワイルドだねぇ！ボクは食べられないけど、きみがいっぱい食べて元気なら嬉しいな！」",
@@ -318,7 +318,7 @@
         },
         room: {
             text: "「この木のお部屋、あったかくて大好きなんだ！でも…きみが新しい家具とか置いてくれたら、もっと嬉しいかも！」",
-            options: [{ text: "「今度ふかふかのベッドを買ってあげる Lich", next: "room_bed" }, { text: "「おもちゃの車とかどう？」", next: "room_toy" }]
+            options: [{ text: "「今度ふかふかのベッドを買ってあげる」", next: "room_bed" }, { text: "「おもちゃの車とかどう？」", next: "room_toy" }]
         },
         room_bed: {
             text: "「わぁっ、ふかふかのベッド！？そこで丸くなって寝たら絶対に幸せだなぁ…楽しみ！」",
@@ -338,7 +338,7 @@
         },
         play_walk: {
             text: "「お散歩！お外の世界ってどんなに広いんだろう。いつかきみのポケットに入って、一緒にお外を見てみたいな！」",
-            loveBonus: 4, state: 'happy', options: [{ text: "「いつか一緒に行おうね」", next: "start" }]
+            loveBonus: 4, state: 'happy', options: [{ text: "「いつか一緒に行こうね」", next: "start" }]
         }
     };
 
@@ -376,6 +376,7 @@
     }, 15000);
 
     function saveGame() {
+        localStorage.setItem('nezumi_name', nezumiName); // 名前セーブを絶対保証
         localStorage.setItem('nezumi_love', love);
         localStorage.setItem('nezumi_cheese', cheese);
         localStorage.setItem('nezumi_hunger', hunger);
@@ -509,10 +510,11 @@
         saveGame(); updateUI();
     }
 
-    // ドット絵エンジン
+    // 💡 プレミアム・リアルドット絵の描画エンジン（鼻・ひげの位置のズレを完全ミリ単位修正！）
     function drawPremiumRealPixel() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        // お出かけ中の背景演出
         if (nezumiState === 'out') {
             let skyGrad = ctx.createLinearGradient(0, 0, 0, 120);
             skyGrad.addColorStop(0, '#7aa2f7'); skyGrad.addColorStop(1, '#aaddff');
@@ -526,6 +528,7 @@
             return;
         }
 
+        // お部屋の木の背景
         let wallGrad = ctx.createLinearGradient(0, 0, 0, 130);
         wallGrad.addColorStop(0, '#e3d8d4'); wallGrad.addColorStop(1, '#b0bec5');
         ctx.fillStyle = wallGrad; ctx.fillRect(0, 0, canvas.width, 130);
@@ -538,17 +541,20 @@
         ctx.fillStyle = 'rgba(46, 26, 21, 0.3)';
         for(let y = 130; y < canvas.height; y += 14) ctx.fillRect(0, y, canvas.width, 1);
 
+        // 🚗 ミニカー
         if (love >= 30) {
             ctx.fillStyle = '#ff4d6d'; ctx.fillRect(30, 132, 16, 8); 
             ctx.fillStyle = '#ffb703'; ctx.fillRect(36, 129, 8, 4);  
             ctx.fillStyle = '#11111a'; ctx.fillRect(32, 139, 3, 3); ctx.fillRect(41, 139, 3, 3);  
         }
 
+        // 🛏️ ふかふかベッド
         if (love >= 100) {
             ctx.fillStyle = '#4ea8de'; ctx.fillRect(230, 122, 60, 22); 
             ctx.fillStyle = '#9ece6a'; ctx.fillRect(245, 120, 42, 6);  
         }
 
+        // ふん
         ctx.fillStyle = '#3e2723';
         for(let i = 0; i < poopCount; i++) {
             let px = 70 + (i * 30) + Math.sin(i * 10) * 10;
@@ -564,20 +570,25 @@
             if (blinkTimer > 114) { isBlinking = false; blinkTimer = 0; }
         }
 
+        // 💡 シュッとした流線型をキープする絶対基準座標（bx=110, by=135）
         const bx = 110;
         const by = 135 + breath;
 
+        // 足元のリアルな影
         ctx.fillStyle = 'rgba(30, 15, 10, 0.4)';
         ctx.beginPath(); ctx.ellipse(bx + 28, by + 22, 28, 5, 0, 0, Math.PI*2); ctx.fill();
 
+        // 1. しっぽ
         ctx.strokeStyle = '#f4c2c2'; ctx.lineWidth = 3; ctx.lineCap = 'round';
         ctx.beginPath(); ctx.moveTo(bx + 55, by + 10);
         ctx.bezierCurveTo(bx + 85, by + 15, bx + 100, by - 15, bx + 95, by - 30 + (isDead ? 0 : Math.sin(time/350)*4));
         ctx.stroke();
 
+        // 2. 後ろ足
         ctx.beginPath(); ctx.fillStyle = '#dedee8'; ctx.ellipse(bx + 40, by + 12, 16, 12, Math.PI/6, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = '#ffccd5'; ctx.fillRect(bx + 44, by + 22, 10, 4);
 
+        // 3. 胴体（透け防止ソリッド）
         ctx.fillStyle = '#ffffff';
         for(let i=0; i<36; i+=2) { ctx.fillRect(bx + i * 0.2, by - 10 + i, 45 + (i * 0.4), 2); }
         let bodyColors = isSick ? ['#f0f0f5', '#e1e1ed', '#cbd5e1', '#b8b8c7'] : ['#ffffff', '#f2f2fa', '#e1e1ed', '#d2d2e3', '#c2c2d6'];
@@ -586,6 +597,7 @@
             ctx.fillRect(bx + i * 0.2, by - 10 + i, 45 + (i * 0.4), 2);
         }
 
+        // 4. 奥のお耳
         const drawRealEar = (ex, ey, innerColor, outerColor) => {
             ctx.fillStyle = outerColor; ctx.beginPath(); ctx.ellipse(ex, ey, 15, 17, 0, 0, Math.PI*2); ctx.fill();
             ctx.fillStyle = innerColor; ctx.beginPath(); ctx.ellipse(ex, ey + 1, 11, 13, 0, 0, Math.PI*2); ctx.fill();
@@ -593,6 +605,7 @@
         };
         drawRealEar(bx + 12, by - 28, '#ffccd5', '#e6e6f2');
 
+        // 5. 頭部（透け防止ソリッド）
         ctx.fillStyle = '#ffffff';
         for(let i=0; i<24; i+=2) { ctx.fillRect(bx - 12 + i * 0.6, by - 18 + i, 24 + i, 2); }
         let headColors = isSick ? ['#f5f5fa', '#e6e6f2', '#c2c2d6'] : ['#fcfcfc', '#f5f5fa', '#e6e6f2', '#d7d7eb'];
@@ -601,8 +614,10 @@
             ctx.fillRect(bx - 12 + i * 0.6, by - 18 + i, 24 + i, 2);
         }
 
+        // 6. 手前のお耳
         drawRealEar(bx + 26, by - 24, '#ffccd5', '#f5f5fa');
 
+        // 7. パッチリおめめレイヤー
         const ey = by - 7, ex = bx + 16;
         if (isDead) {
             ctx.strokeStyle = '#555'; ctx.lineWidth = 2;
@@ -616,13 +631,22 @@
             ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(ex - 1, ey - 1, 1.2, 0, Math.PI*2); ctx.fill();
         }
 
-        ctx.fillStyle = isSick ? '#e57373' : '#ff9ebb'; ctx.fillRect(bx - 14, by + 2, 4, 3);
+        // 💡 【ここを大修正！】顔の先端（bx-12, by+6の位置）に鼻とひげの基準点を完全密着！
+        const hx = bx - 12;
+        const hy = by + 3;
+
+        // 8. 尖ったピンクの鼻先（顔の左端先端へジャストフィット）
+        ctx.fillStyle = isSick ? '#e57373' : '#ff9ebb'; 
+        ctx.fillRect(hx - 2, hy - 1, 4, 3);
+        
+        // 9. リアルで繊細なお髭（鼻の付け根から左へ綺麗に流れるように修正）
         ctx.strokeStyle = 'rgba(70, 70, 90, 0.4)'; ctx.lineWidth = 0.8; ctx.beginPath();
         let piku = isDead ? 0 : Math.sin(time / 60) * 0.8;
-        ctx.moveTo(bx - 10, by + 3); ctx.lineTo(bx - 32, by - 1 + piku);
-        ctx.moveTo(bx - 10, by + 4); ctx.lineTo(bx - 35, by + 5 - piku);
+        ctx.moveTo(hx + 2, hy + 1); ctx.lineTo(hx - 20, hy - 3 + piku); // 上ひげ
+        ctx.moveTo(hx + 2, hy + 2); ctx.lineTo(hx - 23, hy + 3 - piku); // 下ひげ
         ctx.stroke();
 
+        // 前足
         ctx.fillStyle = '#ffccd5';
         if (nezumiState === 'eating') {
             ctx.fillStyle = '#ffb703'; ctx.fillRect(bx - 2, by + 14, 12, 10);
@@ -656,12 +680,13 @@
         });
     }
 
-    // 起動処理
+    function runLoop() { drawPremiumRealPixel(); requestAnimationFrame(runLoop); }
+
+    // 起動
     updateCarOption();
     if (isDead) { triggerDeath(); } else if (nezumiName) { showScenario('start'); }
     updateUI();
     runLoop();
-    function runLoop() { drawPremiumRealPixel(); requestAnimationFrame(runLoop); }
 </script>
 </body>
 </html>
