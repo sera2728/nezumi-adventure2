@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🐹 ねずみのほっこりルーム DX Premium</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #0d0d1a; color: #e0e0ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        #intro-screen { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #06060c; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; z-index: 1000; text-align: center; gap: 24px; transition: opacity 0.5s ease; }
+        .intro-title { font-size: 14px; color: #aaddff; line-height: 1.8; letter-spacing: 1.5px; max-width: 280px; font-weight: normal; }
+        #name-input { background: #161626; border: 1px solid #31314d; border-radius: 12px; color: #fff; padding: 12px; font-size: 14px; text-align: center; width: 220px; outline: none; }
+        #name-input:focus { border-color: #ffb703; }
+        .start-btn { background: linear-gradient(135deg, #ffb703, #ee9b00); color: #0d0d1a; font-weight: bold; border: none; padding: 12px 30px; border-radius: 12px; font-size: 13px; cursor: pointer; }
+        #game-container { width: 350px; background: #161626; border: 2px solid #2d2d44; border-radius: 24px; padding: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 10px; }
+        #status-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #090911; padding: 10px; border-radius: 14px; font-size: 11px; border: 1px solid #1f1f33; }
+        .status-item { display: flex; align-items: center; gap: 4px; }
+        .val { color: #ffb703; font-weight: bold; }
+        .alert-val { color: #ff4d6d; font-weight: bold; }
+        #vitals-panel { display: flex; flex-direction: column; gap: 4px; background: #090911; padding: 8px 12px; border-radius: 14px; font-size: 11px; }
+        .vital-row { display: flex; justify-content: space-between; align-items: center; }
+        .progress-bg { width: 180px; height: 6px; background: #222; border-radius: 3px; overflow: hidden; }
+        .progress-bar { height: 100%; width: 100%; transition: width 0.3s, background-color 0.3s; }
+        #room-viewport { position: relative; width: 100%; height: 200px; background: #000; border-radius: 16px; border: 1px solid #2d2d44; overflow: hidden; }
+        canvas#room-canvas { display: block; }
+        #dialogue-box { background: #090911; border: 1px solid #2d2d44; border-radius: 16px; padding: 12px; min-height: 60px; }
+        #speaker-name { font-size: 12px; color: #ff758f; margin-bottom: 4px; font-weight: bold; letter-spacing: 1px; }
+        #dialogue-text { font-size: 13px; line-height: 1.5; color: #e2e8f0; }
+        #autosave-indicator { font-size: 10px; color: #3a3a5a; text-align: right; height: 14px; transition: color 0.5s; }
+        #autosave-indicator.saved { color: #4ea860; }
+        #talk-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 500; justify-content: center; align-items: flex-end; padding-bottom: 20px; }
+        #talk-modal.show { display: flex; }
+        #talk-modal-inner { background: #161626; border: 1px solid #2d2d44; border-radius: 20px; padding: 16px; width: 340px; display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow-y: auto; }
+        #talk-modal-title { font-size: 12px; color: #7788aa; margin-bottom: 4px; }
+        .modal-opt { background: #212135; color: #f1f5f9; border: 1px solid #31314d; padding: 10px 14px; border-radius: 12px; cursor: pointer; font-size: 13px; text-align: left; width: 100%; }
+        .modal-opt:hover { background: #2d2d49; }
+        .modal-close { background: transparent; color: #7788aa; border: 1px solid #31314d; padding: 8px; border-radius: 12px; cursor: pointer; font-size: 12px; text-align: center; width: 100%; }
+        #action-area { display: flex; flex-direction: column; gap: 6px; }
+        .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .act-btn { text-align: center; background: linear-gradient(135deg, #ffb703, #ee9b00); color: #0d0d1a; font-weight: bold; border: none; padding: 10px 6px; font-size: 12px; border-radius: 12px; cursor: pointer; }
+        .act-btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+        .act-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
+        .talk-btn { background: linear-gradient(135deg, #7aa2f7, #5a7fd4); color: white; }
+        .water-btn { background: linear-gradient(135deg, #4ea8de, #0077b6); color: white; }
+        .clean-btn { background: linear-gradient(135deg, #20b2aa, #008080); color: white; }
+        .med-btn { background: linear-gradient(135deg, #ff4d6d, #c9184a); color: white; grid-column: span 3; }
+        .out-btn { background: linear-gradient(135deg, #9ece6a, #7aa2f7); color: #0d0d1a; grid-column: span 3; }
+    </style>
+</head>
+<body>
+<div id="intro-screen">
+    <h1 class="intro-title">画面から出られない孤独なネズミを救うための、あなただけの物語</h1>
+    <input type="text" id="name-input" placeholder="ネズミの名前を入力..." maxlength="8">
+    <button class="start-btn" onclick="initStory()">物語を始める</button>
+</div>
+<div id="talk-modal">
+    <div id="talk-modal-inner">
+        <div id="talk-modal-title">💬 何を話す？</div>
+        <div id="modal-options"></div>
+        <button class="modal-close" onclick="closeTalkModal()">✕ とじる</button>
+    </div>
+</div>
+<div id="game-container">
+    <div id="status-bar">
+        <div class="status-item">🤝 なかよし: <span id="love-val" class="val">10</span></div>
+        <div class="status-item">🧀 チーズ: <span id="cheese-val" class="val">3</span></div>
+        <div class="status-item">💩 ふん: <span id="poop-val" class="val">0 / 5</span></div>
+        <div class="status-item">⚠️ 状態: <span id="condition-val" class="val">健康</span></div>
+    </div>
+    <div id="vitals-panel">
+        <div class="vital-row"><span>🍖 お腹</span><div class="progress-bg"><div id="hunger-bar" class="progress-bar" style="background:#9ece6a;"></div></div></div>
+        <div class="vital-row"><span>💧 のど</span><div class="progress-bg"><div id="thirst-bar" class="progress-bar" style="background:#4ea8de;"></div></div></div>
+    </div>
+    <div id="room-viewport"><canvas id="room-canvas" width="314" height="200"></canvas></div>
+    <div id="dialogue-box">
+        <div id="speaker-name">白ネズミ</div>
+        <div id="dialogue-text">「なかよし度が増えると、ボクもっとハッピーになれるんだ！」</div>
+    </div>
+    <div id="autosave-indicator">　</div>
+    <div id="action-area">
+        <div class="action-grid">
+            <button class="act-btn talk-btn" onclick="doAction(openTalkModal)">💬 話す</button>
+            <button id="cmd-cheese" class="act-btn" onclick="doAction(giveCheese)">🧀 チーズ</button>
+            <button id="cmd-water" class="act-btn water-btn" onclick="doAction(giveWater)">💧 お水</button>
+            <button id="cmd-stroke" class="act-btn" onclick="doAction(strokeHead)">👋 なでなで</button>
+            <button id="cmd-clean" class="act-btn clean-btn" onclick="doAction(cleanRoom)">🧹 掃除</button>
+            <button class="act-btn" style="background:#1a1a2e;color:#444;border:1px solid #222;cursor:default;" disabled></button>
+            <button id="cmd-out" class="act-btn out-btn" style="display:none;" onclick="doAction(goOutEvent)">🚶 お出かけ</button>
+            <button id="cmd-med" class="act-btn med-btn" style="display:none;" onclick="doAction(giveMedicine)">💊 薬を飲ませる</button>
+        </div>
+    </div>
+</div>
+<script>
+const SAVE_KEY='nezumi_sera2728_v1';
+const canvas=document.getElementById('room-canvas');
+const ctx=canvas.getContext('2d');
+
+const IMGS={
+    normal: (()=>{const i=new Image();i.src='nezumi_normal.jpg';return i;})(),
+    sleep:  (()=>{const i=new Image();i.src='nezumi_sleep.jpg';return i;})(),
+    happy:  (()=>{const i=new Image();i.src='nezumi_happy.jpg';return i;})(),
+    eating: (()=>{const i=new Image();i.src='nezumi_eating.jpg';return i;})(),
+    sick:   (()=>{const i=new Image();i.src='nezumi_sick.jpg';return i;})(),
+};
+
+function loadGame(){try{const r=localStorage.getItem(SAVE_KEY);return r?JSON.parse(r):null;}catch(e){return null;}}
+const saved=loadGame();
+let nezumiName=saved?saved.name:"";
+let love=saved?(saved.love||10):10;
+let cheese=saved?(saved.cheese!==undefined?saved.cheese:3):3;
+let poopCount=saved?(saved.poop||0):0;
+let isSick=saved?(saved.sick||false):false;
+let isDead=saved?(saved.dead||false):false;
+let hunger=saved?(saved.hunger!==undefined?saved.hunger:100):100;
+let thirst=saved?(saved.thirst!==undefined?saved.thirst:100):100;
+let lastSaved=saved?(saved.lastTime||Date.now()):Date.now();
+const decayH=100/259200,decayT=100/172800;
+
+if(!isDead&&saved){
+    const el=(Date.now()-lastSaved)/1000;
+    hunger=Math.max(0,hunger-el*decayH);
+    thirst=Math.max(0,thirst-el*decayT);
+    const np=Math.floor(el/43200);
+    if(hunger>10)poopCount=Math.min(5,poopCount+np);
+    if(poopCount>=3&&!isSick&&Math.random()<(love>=100?0.05:0.2))isSick=true;
+    if(hunger<=0||thirst<=0)isDead=true;
+}
+if(nezumiName){
+    document.getElementById('intro-screen').style.display='none';
+    document.getElementById('speaker-name').textContent=nezumiName;
+}
+
+function saveGame(){
+    if(nezumiName)localStorage.setItem(SAVE_KEY,JSON.stringify({name:nezumiName,love,cheese,poop:poopCount,sick:isSick,dead:isDead,hunger,thirst,lastTime:Date.now()}));
+}
+function showSaveIndicator(){
+    const el=document.getElementById('autosave-indicator');
+    el.textContent='💾 セーブ完了';el.classList.add('saved');
+    setTimeout(()=>{el.textContent='　';el.classList.remove('saved');},1500);
+}
+setInterval(()=>{saveGame();showSaveIndicator();},30000);
+window.addEventListener('beforeunload',()=>saveGame());
+document.addEventListener('visibilitychange',()=>{if(document.hidden)saveGame();});
+
+function initStory(){
+    const input=document.getElementById('name-input');
+    let nameVal=input.value.trim();
+    if(!nameVal)nameVal="ユキマル";
+    nezumiName=nameVal;
+    document.getElementById('speaker-name').textContent=nezumiName;
+    document.getElementById('intro-screen').style.opacity='0';
+    setTimeout(()=>{document.getElementById('intro-screen').style.display='none';},500);
+    wakeUp();
+    say('「はじめまして！ボクの名前は '+nezumiName+' だよ！よろしくね！」');
+    saveGame();showSaveIndicator();
+}
+
+// ネズミの状態管理
+let nezumiState='normal'; // normal, sleep, happy, eating, sick, out, dead
+let t=0,blinkTimer=0,blinkFrame=0,isBlinking=false;
+
+// 睡眠ランダム切り替え（10分おき）
+let sleepTimer=null;
+function scheduleSleep(){
+    if(sleepTimer)clearTimeout(sleepTimer);
+    // 5〜15分のランダム
+    const delay=(Math.random()*600+300)*1000;
+    sleepTimer=setTimeout(()=>{
+        if(!isDead&&!isSick&&nezumiState==='normal'){
+            nezumiState='sleep';
+            say('「zzz…」');
+        }
+        scheduleSleep();
+    },delay);
+}
+
+// アクションしたら起こす
+function wakeUp(){
+    if(nezumiState==='sleep'){
+        nezumiState='normal';
+    }
+    scheduleSleep(); // タイマーリセット
+}
+
+// アクションラッパー（全アクションで起こす）
+function doAction(fn){
+    wakeUp();
+    fn();
+}
+
+function getImg(){
+    if(isDead) return IMGS.normal;
+    if(isSick) return IMGS.sick;
+    return IMGS[nezumiState]||IMGS.normal;
+}
+
+const talkTree={root:[
+    {text:"「今日の調子はどう？」",action:()=>{addLove(3,'happy');say('「きみに会えたから、ボクすっごく元気が出たよ！えへへ。」');}},
+    {text:"「好きな食べ物は？」",action:()=>branchFood()},
+    {text:"「お部屋の住み心地は？」",action:()=>branchRoom()},
+    {text:"「普段は何して遊んでるの？」",action:()=>branchPlay()},
+]};
+if(love>=30&&!talkTree.root.some(o=>o.text.includes('ミニカー'))){
+    talkTree.root.push({text:"「ミニカーで遊ぼう！」",action:()=>{addLove(5,'happy');say('「わーい！この赤い車、ボクの宝物なんだ！一緒に走らせると楽しいね！」');}});
+}
+function branchFood(){showModalOptions([{text:"「お肉が好きだよ」",action:()=>{addLove(3,'happy');say('「お肉！きみが元気なら嬉しいな！」');}},{text:"「甘いお菓子が好き」",action:()=>{addLove(4,'happy');say('「お菓子！クッキーのひとかけらもボクには大ごちそうなんだ！」');}},{text:"← もどる",action:()=>openTalkModal()}]);}
+function branchRoom(){showModalOptions([{text:"「ふかふかのベッドを買ってあげる」",action:()=>{addLove(5,'happy');say('「わぁっ！ふかふかで丸くなって寝たら絶対幸せだなぁ！」');}},{text:"「おもちゃの車とかどう？」",action:()=>{addLove(4,'happy');say('「おもちゃの車！お部屋を大冒険するんだね！ワクワク！」');}},{text:"← もどる",action:()=>openTalkModal()}]);}
+function branchPlay(){showModalOptions([{text:"「ゲームをして遊んでるよ」",action:()=>{addLove(5,'happy');say('「ゲーム！今ボクときみが遊んでるのもゲームなのかな？嬉しいな！」');}},{text:"「お外をのんびりお散歩してるよ」",action:()=>{addLove(4,'happy');say('「お散歩！いつかきみのポケットに入って一緒にお外を見てみたいな！」');}},{text:"← もどる",action:()=>openTalkModal()}]);}
+
+function openTalkModal(){if(isDead)return;wakeUp();showModalOptions(talkTree.root);}
+function closeTalkModal(){document.getElementById('talk-modal').classList.remove('show');}
+function showModalOptions(opts){
+    const c=document.getElementById('modal-options');c.innerHTML='';
+    opts.forEach(opt=>{const btn=document.createElement('button');btn.className='modal-opt';btn.textContent=opt.text;btn.onclick=()=>{closeTalkModal();opt.action();saveGame();updateUI();};c.appendChild(btn);});
+    document.getElementById('talk-modal').classList.add('show');
+}
+function say(text){document.getElementById('dialogue-text').textContent=text;}
+function addLove(n,state){
+    let old=love;love+=n;checkMilestones(old,love);
+    if(state&&!isSick&&!isDead){nezumiState=state;setTimeout(()=>{if(!isDead&&!isSick)nezumiState='normal';scheduleSleep();},2500);}
+}
+function checkMilestones(o,n){
+    if(o<30&&n>=30){alert("🎉 なかよし度が30突破！【おもちゃのミニカー】がお部屋に追加されました！");if(!talkTree.root.some(x=>x.text.includes('ミニカー')))talkTree.root.push({text:"「ミニカーで遊ぼう！」",action:()=>{addLove(5,'happy');say('「わーい！この赤い車、ボクの宝物なんだ！一緒に走らせると楽しいね！」');}});}
+    if(o<60&&n>=60)alert("🎉 なかよし度が60突破！【お出かけ】が解放されました！");
+    if(o<100&&n>=100)alert("🎉 なかよし度が100突破！【ふかふか高級ベッド】がお部屋に設置されました！");
+}
+
+setInterval(()=>{
+    if(isDead)return;
+    hunger=Math.max(0,hunger-15*decayH);thirst=Math.max(0,thirst-15*decayT);
+    if(hunger>20&&Math.random()<0.005)poopCount=Math.min(5,poopCount+1);
+    if(poopCount>=3&&!isSick&&Math.random()<(love>=100?0.002:0.02))isSick=true;
+    if(hunger<=0||thirst<=0)triggerDeath();
+    saveGame();updateUI();
+},15000);
+
+function updateUI(){
+    document.getElementById('love-val').textContent=love;
+    document.getElementById('cheese-val').textContent=cheese;
+    document.getElementById('poop-val').textContent=poopCount+' / 5';
+    document.getElementById('hunger-bar').style.width=hunger+'%';
+    document.getElementById('thirst-bar').style.width=thirst+'%';
+    document.getElementById('hunger-bar').style.backgroundColor=hunger<25?'#ff4d6d':'#9ece6a';
+    document.getElementById('thirst-bar').style.backgroundColor=thirst<25?'#ff4d6d':'#4ea8de';
+    document.getElementById('cmd-out').style.display=(!isDead&&love>=60&&nezumiState!=='out')?'block':'none';
+    if(isDead){document.getElementById('condition-val').textContent='死亡';document.getElementById('condition-val').className='alert-val';document.getElementById('cmd-med').style.display='none';}
+    else if(isSick){document.getElementById('condition-val').textContent='病気';document.getElementById('condition-val').className='alert-val';document.getElementById('cmd-med').style.display='block';}
+    else if(nezumiState==='sleep'){document.getElementById('condition-val').textContent='睡眠中';document.getElementById('condition-val').className='val';document.getElementById('cmd-med').style.display='none';}
+    else{document.getElementById('condition-val').textContent='健康';document.getElementById('condition-val').className='val';document.getElementById('cmd-med').style.display='none';}
+}
+
+function goOutEvent(){
+    if(isDead||isSick)return;
+    nezumiState='out';updateUI();
+    document.getElementById('speaker-name').textContent='システム';
+    say(nezumiName+'を胸のポケットに入れて、一緒にお散歩に出かけました……。');
+    document.querySelectorAll('.act-btn').forEach(b=>b.disabled=true);
+    setTimeout(()=>{
+        nezumiState='normal';document.querySelectorAll('.act-btn').forEach(b=>b.disabled=false);
+        document.getElementById('speaker-name').textContent=nezumiName;
+        let rand=Math.random();
+        if(rand<0.4){cheese+=2;say('「ただいまー！草むらで特製チーズを2個見つけちゃった！」');}
+        else if(rand<0.7&&isSick){isSick=false;say('「お外の空気を吸ったら、病気が吹き飛んじゃった！ありがとう！」');}
+        else{addLove(5,'happy');say('「お外の世界は広くてドキドキしたなぁ…でもきみのポケットが一番安心するよ。」');}
+        saveGame();updateUI();scheduleSleep();
+    },3500);
+}
+function triggerDeath(){
+    isDead=true;if(sleepTimer)clearTimeout(sleepTimer);saveGame();updateUI();
+    document.getElementById('speaker-name').textContent='システム';
+    say((nezumiName||'白ネズミ')+'は天国へ旅立ってしまったようです。');
+    document.querySelectorAll('.act-btn').forEach(b=>b.disabled=true);
+    document.querySelector('.action-grid').innerHTML='<button class="act-btn med-btn" onclick="resetGame()" style="grid-column:span 3;">🌱 新しく飼い直す</button>';
+}
+function resetGame(){localStorage.removeItem(SAVE_KEY);location.reload();}
+function cleanRoom(){if(isDead)return;poopCount=0;say('「お部屋がピカピカになった！お掃除ありがとう！」');saveGame();updateUI();}
+function giveMedicine(){if(isDead||!isSick)return;isSick=false;nezumiState='happy';say('「お薬苦かったけど、元気になったよ！ありがとう！」');setTimeout(()=>{nezumiState='normal';scheduleSleep();},2500);saveGame();updateUI();}
+function giveWater(){if(isDead)return;thirst=Math.min(100,thirst+40);addLove(0,'happy');say('「お水美味しい！のどのカラカラが治ったよ！」');saveGame();updateUI();}
+function giveCheese(){
+    if(isDead)return;
+    if(cheese>0){cheese--;addLove(4,'eating');hunger=Math.min(100,hunger+40);say('「大好きなチーズだ！もぐもぐ…お腹いっぱい！」');setTimeout(()=>{nezumiState='normal';scheduleSleep();},3500);saveGame();updateUI();}
+    else{say('「チーズなくなっちゃったみたい。きみが側にいてくれるだけで満足だよ！」');}
+}
+function strokeHead(){
+    if(isDead)return;
+    addLove(1,'happy');say('「頭をなでられるの、あったかくて大好き…」');
+    if(Math.random()<0.15){cheese++;setTimeout(()=>{say('「あ！すみにチーズが落ちてたよ！プレゼント！」');},1800);}
+    setTimeout(()=>{nezumiState='normal';scheduleSleep();},3500);
+    saveGame();updateUI();
+}
+
+function drawScene(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#000';ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    if(nezumiState==='out'){
+        let sg=ctx.createLinearGradient(0,0,0,120);sg.addColorStop(0,'#7aa2f7');sg.addColorStop(1,'#aaddff');
+        ctx.fillStyle=sg;ctx.fillRect(0,0,canvas.width,120);
+        ctx.fillStyle='#fff';ctx.fillRect(40,30,50,14);ctx.fillRect(180,20,60,16);
+        let gg=ctx.createLinearGradient(0,120,0,canvas.height);gg.addColorStop(0,'#9ece6a');gg.addColorStop(1,'#739a46');
+        ctx.fillStyle=gg;ctx.fillRect(0,120,canvas.width,80);
+        return;
+    }
+
+    // ふん
+    ctx.fillStyle='#6d4c41';
+    for(let i=0;i<poopCount;i++){let px=50+(i*30)+Math.sin(i*10)*10,py=185+(i%2)*6;ctx.fillRect(px,py,6,4);}
+    // ミニカー
+    if(love>=30){ctx.fillStyle='#ff4d6d';ctx.fillRect(20,175,16,8);ctx.fillStyle='#ffb703';ctx.fillRect(26,172,8,4);ctx.fillStyle='#333';ctx.fillRect(22,182,3,3);ctx.fillRect(31,182,3,3);}
+    // ベッド
+    if(love>=100){ctx.fillStyle='#4ea8de';ctx.fillRect(240,160,55,20);ctx.fillStyle='#9ece6a';ctx.fillRect(250,158,40,6);}
+
+    t++;
+    blinkTimer++;
+    if(!isBlinking&&blinkTimer>240){isBlinking=true;blinkFrame=0;blinkTimer=0;}
+    if(isBlinking){blinkFrame++;if(blinkFrame>8){isBlinking=false;blinkFrame=0;}}
+
+    const breathY=isDead?0:Math.sin(t/50)*1.8;
+    const imgH=150,imgW=imgH*(4/3);
+    const imgX=(canvas.width-imgW)/2;
+    const imgY=10+breathY;
+
+    const img=getImg();
+    if(img.complete&&img.naturalWidth>0){
+        ctx.drawImage(img,imgX,imgY,imgW,imgH);
+    }
+
+    // 通常時のみまばたき
+    if(nezumiState==='normal'&&isBlinking&&!isDead&&!isSick){
+        let ca=blinkFrame<=3?blinkFrame/3:blinkFrame<=5?1:1-(blinkFrame-5)/3;
+        const lx=imgX+imgW*0.40,ly=imgY+imgH*0.62;
+        const rx=imgX+imgW*0.60,ry=imgY+imgH*0.58;
+        const ew=6,eh=6*ca;
+        if(eh>0.3){
+            ctx.fillStyle='#ffffff';
+            ctx.beginPath();ctx.ellipse(lx,ly,ew,eh,0,0,Math.PI*2);ctx.fill();
+            ctx.beginPath();ctx.ellipse(rx,ry,ew,eh,0,0,Math.PI*2);ctx.fill();
+        }
+    }
+    // 死亡時×目
+    if(isDead){
+        const lx=imgX+imgW*0.40,ly=imgY+imgH*0.62;
+        const rx=imgX+imgW*0.60,ry=imgY+imgH*0.58;
+        ctx.strokeStyle='#888';ctx.lineWidth=2.5;ctx.lineCap='round';
+        ctx.beginPath();ctx.moveTo(lx-5,ly-5);ctx.lineTo(lx+5,ly+5);ctx.moveTo(lx+5,ly-5);ctx.lineTo(lx-5,ly+5);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(rx-5,ry-5);ctx.lineTo(rx+5,ry+5);ctx.moveTo(rx+5,ry-5);ctx.lineTo(rx-5,ry+5);ctx.stroke();
+    }
+}
+
+function runLoop(){drawScene();requestAnimationFrame(runLoop);}
+if(isDead){triggerDeath();}else if(nezumiName){say('「おかえり！'+nezumiName+'だよ。今日もよろしくね！」');}
+updateUI();
+scheduleSleep();
+runLoop();
+</script>
+</body>
+</html>
