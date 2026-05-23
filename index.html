@@ -231,7 +231,7 @@
     const canvas = document.getElementById('room-canvas');
     const ctx = canvas.getContext('2d');
 
-    // 💡 データの読み込み
+    // データの読み込み
     let nezumiName = localStorage.getItem('nezumi_name') || "";
     let love = parseInt(localStorage.getItem('nezumi_love')) || 10;
     let cheese = parseInt(localStorage.getItem('nezumi_cheese')) || 3;
@@ -251,7 +251,7 @@
     let thirst = parseFloat(localStorage.getItem('nezumi_thirst'));
     if (isNaN(thirst)) thirst = 100;
 
-    // 💡 名前データがすでにしっかりと存在する場合のみスキップ
+    // 名前データがすでに存在する場合のみスキップ
     if (nezumiName && nezumiName !== "") {
         document.getElementById('intro-screen').style.display = 'none';
         document.getElementById('speaker-name').textContent = nezumiName;
@@ -263,7 +263,7 @@
         if (!nameVal) nameVal = "ユキマル"; 
         
         nezumiName = nameVal;
-        localStorage.setItem('nezumi_name', nezumiName); // 確実にここでセーブ
+        localStorage.setItem('nezumi_name', nezumiName); 
         document.getElementById('speaker-name').textContent = nezumiName;
         
         const screen = document.getElementById('intro-screen');
@@ -306,7 +306,7 @@
         },
         food: {
             text: "「やっぱり黄色くてあま～い、とろけるチーズが一番好き！きみは何が好き？」",
-            options: [{ text: "「お肉が好きだよ」", next: "meat" }, { text: "「甘いお菓子が好き」", next: "sweet" }]
+            options: [{ text: "「お肉が好きだよ dog」", next: "meat" }, { text: "「甘いお菓子が好き」", next: "sweet" }]
         },
         meat: {
             text: "「お肉！ワイルドだね！ボクは食べられないけど、きみがいっぱい食べて元気なら嬉しいな！」",
@@ -330,11 +330,11 @@
         },
         play_event: {
             text: "「普段はね、お部屋のすみをクンクン探検したり、しっぽを追いかけてるよ。きみは何して遊んでるの？」",
-            options: [{ text: "「ゲームをして遊んでるよ」", next: "play_game" }, { text: "「お外をのんびりお散歩してるよ nudge" }, { text: "「お外をのんびりお散歩してるよ」", next: "play_walk" }]
+            options: [{ text: "「ゲームをして遊んでるよ」", next: "play_game" }, { text: "「お外をのんびりお散歩してるよ」", next: "play_walk" }]
         },
         play_game: {
             text: "「ゲーム！今ボクときみがこうやって遊んでるのもゲームなのかな？同じ遊びができて幸せだよ！」",
-            loveBonus: 5, state: 'happy', options: [{ text: "「これからも一緒に遊ぼう」", next: "start" }]
+            loveBonus: 5, state: 'happy', options: [{ text: "「これからも一緒に遊ぼう slide", next: "start" }, { text: "「これからも一緒に遊ぼう」", next: "start" }]
         },
         play_walk: {
             text: "「お散歩！いつかきみのポケットに入って、一緒にお外を見てみたいな！」",
@@ -445,6 +445,7 @@
                 rewardText = `「お外の美味しい空気を吸ったら、病気がすっかり吹き飛んじゃった！ありがとう！」`;
             } else {
                 let oldLove = love; love += 5; checkMilestones(oldLove, love);
+                rewardText = `「お外の世界は広くてドキドキしたなぁ… Snowden`;
                 rewardText = `「お外の世界は広くてドキドキしたなぁ…でもきみのポケットの中が一番安心するよ。」`;
             }
             
@@ -512,7 +513,7 @@
         saveGame(); updateUI();
     }
 
-    // 💡 プレミアム・リアルドット絵の描画エンジン（バグべた書きを完全撤去・完全相対座標固定）
+    // 💡 プレミアム・リアルドット絵の描画エンジン
     function drawPremiumRealPixel() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -627,19 +628,19 @@
             ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(ex - 1, ey - 1, 1.2, 0, Math.PI*2); ctx.fill();
         }
 
-        // 💡 【バグ大爆破！】浮いていた鼻とひげの位置を、顔の流線型の先端（bx-12, by+4）へ完璧にガッチリ完全固定！
+        // 💡 浮いていた鼻とひげの位置を、顔の流線型の先端（bx-13, by+3）へ完璧にガッチリ完全固定！
         const hx = bx - 13;
         const hy = by + 3;
 
-        // 鼻先（絶対にここからズレません）
+        // 鼻先
         ctx.fillStyle = isSick ? '#e57373' : '#ff9ebb'; 
         ctx.fillRect(hx, hy, 4, 3);
         
-        // ひげ（鼻の先端を起点に綺麗に流れるドット）
+        // ひげ
         ctx.strokeStyle = 'rgba(70, 70, 90, 0.4)'; ctx.lineWidth = 0.8; ctx.beginPath();
         let piku = isDead ? 0 : Math.sin(time / 60) * 0.8;
-        ctx.moveTo(hx + 2, hy + 1); ctx.lineTo(hx - 20, hy - 4 + piku); // 上ひげ
-        ctx.moveTo(hx + 2, hy + 2); ctx.lineTo(hx - 22, hy + 4 - piku); // 下ひげ
+        ctx.moveTo(hx + 2, hy + 1); ctx.lineTo(hx - 20, hy - 4 + piku); 
+        ctx.moveTo(hx + 2, hy + 2); ctx.lineTo(hx - 22, hy + 4 - piku); 
         ctx.stroke();
 
         // 前足
@@ -669,7 +670,7 @@
         const container = document.getElementById('options-container');
         container.innerHTML = '';
         s.options.forEach(opt => {
-            if (opt.text.includes("nudge")) return; 
+            if (opt.text.includes("slide")) return; 
             const btn = document.createElement('button');
             btn.className = 'btn'; btn.textContent = opt.text;
             btn.onclick = () => { showScenario(opt.next); saveGame(); updateUI(); };
