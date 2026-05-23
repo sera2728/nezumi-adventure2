@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🐹 ねずみのほっこりルーム DX Premium</title>
+    <title><h3>🐹 ねずみのほっこりルーム DX Premium</h3></title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body {
@@ -107,7 +107,7 @@
             position: relative;
             width: 100%;
             height: 220px;
-            background: #090911;
+            background: #000000; /* 💡 大元の外枠も黒に統一 */
             border-radius: 16px;
             border: 1px solid #2d2d44;
             overflow: hidden;
@@ -231,39 +231,8 @@
     const canvas = document.getElementById('room-canvas');
     const ctx = canvas.getContext('2d');
 
-    // 💡 神様のイラスト画像を透過＆呼吸アニメーションさせる最強エンジン
-    const nezumiRawImg = new Image();
-    nezumiRawImg.src = 'nezumiirasuto.jpg'; // GitHubの画像
-
-    // 💡 透過処理専用のオフスクリーンキャンバス
-    const transparentCanvas = document.createElement('canvas');
-    const tCtx = transparentCanvas.getContext('2d');
-    let nezumiReady = false;
-
-    nezumiRawImg.onload = () => {
-        // 画像から黒い背景を透明にして抜き出す「プログラムによる透過処理」
-        const w = nezumiRawImg.width;
-        const h = nezumiRawImg.height;
-        transparentCanvas.width = w;
-        transparentCanvas.height = h;
-        tCtx.drawImage(nezumiRawImg, 0, 0);
-
-        const imgData = tCtx.getImageData(0, 0, w, h);
-        const data = imgData.data;
-
-        // すべてのピクセルをチェックし、黒（あるいは非常に暗い色）なら透明にする
-        for (let i = 0; i < data.length; i += 4) {
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-            // 黒さの閾値（0-255）を15にして、完全な黒以外も少しトリミング
-            if (r < 15 && g < 15 && b < 15) {
-                data[i + 3] = 0; // 透明度を0に（透過）
-            }
-        }
-        tCtx.putImageData(imgData, 0, 0);
-        nezumiReady = true;
-    };
+    const nezumiImg = new Image();
+    nezumiImg.src = 'nezumiirasuto.jpg'; // 神様のイラスト
 
     let nezumiName = localStorage.getItem('nezumi_name') || "";
     let love = parseInt(localStorage.getItem('nezumi_love')) || 10;
@@ -333,7 +302,7 @@
             ]
         },
         condition: {
-            text: "....きみに会えたから、ボクすっごく元気が出たよ！えへへ。」",
+            text: "「きみに会えたから、ボクすっごく元気が出たよ！えへへ。」",
             loveBonus: 3, state: 'happy', options: [{ text: "「それはよかった！」", next: "start" }]
         },
         food: {
@@ -346,10 +315,10 @@
         },
         sweet: {
             text: "「お菓子！いいよねぇ、クッキーのひとかけらでもボクにとっては大ごちそうなんだ！」",
-            loveBonus: 4, state: 'happy', options: [{ text: "「今度分けてあげるね」", next: "sweet" }, { text: "「今度分けてあげるね」", next: "start" }]
+            loveBonus: 4, state: 'happy', options: [{ text: "「今度分けてあげるね」", next: "start" }]
         },
         room: {
-            text: "「この木のお部屋、あったかくて大好き！でも、もっとアイテムが増えたら嬉しいな！」",
+            text: "「このお部屋、暗くて静かで落ち着くんだ。きみが色んなおもちゃを置いてくれたら、もっと楽しいな！」",
             options: [{ text: "「今度ふかふかのベッドを買ってあげる」", next: "room_bed" }, { text: "「おもちゃの車とかどう？」", next: "room_toy" }]
         },
         room_bed: {
@@ -452,8 +421,7 @@
             nezumiState = 'normal';
             document.querySelectorAll('.btn, .act-btn').forEach(b => b.disabled = false);
             document.getElementById('speaker-name').textContent = nezumiName;
-            let rewardText = "「お外の世界は広くてドキドキしたなぁ… Snowden";
-            rewardText = "「お外の世界は広くてドキドキしたなぁ…でもきみのポケットの中が一番安心するよ。」";
+            let rewardText = "「お外の世界は広くてドキドキしたなぁ…でもきみのポケットの中が一番安心するよ。」";
             document.getElementById('dialogue-text').textContent = rewardText;
             let oldLove = love; love += 5; checkMilestones(oldLove, love);
             saveGame(); updateUI();
@@ -491,7 +459,7 @@
         saveGame(); updateUI();
     }
 
-    // 💡 命を吹き込む新しいハイエンド描画エンジン（トリミング＆合成版！）
+    // 💡 部屋の背景を完全に「漆黒（#000000）」にする新描画エンジン
     function drawPremiumRealPixel() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -507,21 +475,20 @@
             return;
         }
 
-        // お部屋の木の背景（これは絶対に描画し続ける）
-        let wallGrad = ctx.createLinearGradient(0, 0, 0, 130); wallGrad.addColorStop(0, '#e3d8d4'); wallGrad.addColorStop(1, '#b0bec5');
-        ctx.fillStyle = wallGrad; ctx.fillRect(0, 0, canvas.width, 130);
-        ctx.fillStyle = 'rgba(141, 110, 99, 0.12)'; for(let i = 0; i < canvas.width; i += 24) ctx.fillRect(i, 0, 2, 130);
-        let floorGrad = ctx.createLinearGradient(0, 130, 0, canvas.height); floorGrad.addColorStop(0, '#8d6e63'); floorGrad.addColorStop(1, '#4e342e');
-        ctx.fillStyle = floorGrad; ctx.fillRect(0, 130, canvas.width, 70);
-        ctx.fillStyle = 'rgba(46, 26, 21, 0.3)'; for(let y = 130; y < canvas.height; y += 14) ctx.fillRect(0, y, canvas.width, 1);
+        // 💡 【大修正】部屋の背景を完全な漆黒（#000000）に塗り潰す
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        if (love >= 30) { ctx.fillStyle = '#ff4d6d'; ctx.fillRect(30, 132, 16, 8); ctx.fillStyle = '#ffb703'; ctx.fillRect(36, 129, 8, 4); ctx.fillStyle = '#11111a'; ctx.fillRect(32, 139, 3, 3); ctx.fillRect(41, 139, 3, 3); }
-        if (love >= 100) { ctx.fillStyle = '#4ea8de'; ctx.fillRect(230, 122, 60, 22); ctx.fillStyle = '#9ece6a'; ctx.fillRect(245, 120, 42, 6); }
+        // ミニカー（黒背景に映えるように少し位置調整）
+        if (love >= 30) { ctx.fillStyle = '#ff4d6d'; ctx.fillRect(30, 150, 16, 8); ctx.fillStyle = '#ffb703'; ctx.fillRect(36, 147, 8, 4); ctx.fillStyle = '#222'; ctx.fillRect(32, 157, 3, 3); ctx.fillRect(41, 157, 3, 3); }
+        // ベッド
+        if (love >= 100) { ctx.fillStyle = '#4ea8de'; ctx.fillRect(230, 140, 60, 22); ctx.fillStyle = '#9ece6a'; ctx.fillRect(245, 138, 42, 6); }
 
-        ctx.fillStyle = '#3e2723';
-        for(let i = 0; i < poopCount; i++) { let px = 70 + (i * 30) + Math.sin(i * 10) * 10; let py = 165 + (i % 2) * 8; ctx.fillRect(px, py, 6, 4); }
+        // ふん（黒背景で見えるように少し明るい茶色に変更）
+        ctx.fillStyle = '#6d4c41';
+        for(let i = 0; i < poopCount; i++) { let px = 50 + (i * 30) + Math.sin(i * 10) * 10; let py = 175 + (i % 2) * 6; ctx.fillRect(px, py, 6, 4); }
 
-        // 💡 神様のイラストの「呼吸」と「まばたき」の計算
+        // 呼吸とまばたきの計算
         const time = Date.now();
         const breathY = isDead ? 0 : Math.sin(time / 280) * 1.8;
 
@@ -530,38 +497,38 @@
             if (blinkTimer > 135) { isBlinking = false; blinkTimer = 0; }
         }
 
-        // イラストの描画位置（木の部屋に自然に立つように指定）
+        // イラストの描画位置
         const imgX = 80;
         const imgY = 25 + breathY;
         const imgW = 150;
         const imgH = 150;
 
-        // イラストが準備できたら描画
-        if (nezumiReady) {
-            // 足元のリアルな影
-            ctx.fillStyle = 'rgba(30, 15, 10, 0.35)';
-            ctx.beginPath(); ctx.ellipse(imgX + 75, 168, 45, 6, 0, 0, Math.PI*2); ctx.fill();
+        // 影（宇宙空間に浮いているように見えないためのうっすらとした影）
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+        ctx.beginPath(); ctx.ellipse(imgX + 75, 172, 40, 5, 0, 0, Math.PI*2); ctx.fill();
 
-            // 1. **💡 透過処理済みのオフスクリーンキャンバスをキャンバスに重ねて描画！これがトリミング！**
-            ctx.drawImage(transparentCanvas, imgX, imgY, imgW, imgH);
+        // 1. 神様のイラスト画像をそのまま無加工で描画（背景が元々黒いので完全に同化します）
+        ctx.drawImage(nezumiImg, imgX, imgY, imgW, imgH);
 
-            // 2. 💡 イラストの上にリアルタイムで「まばたき」を重ねる
-            const leftEyeX = imgX + 70;
-            const leftEyeY = imgY + 90;
-            const rightEyeX = imgX + 88;
-            const rightEyeY = imgY + 87;
+        // 2. まばたきアニメーションをイラストの上に正確に重ねる
+        const leftEyeX = imgX + 70;
+        const leftEyeY = imgY + 90;
+        const rightEyeX = imgX + 88;
+        const rightEyeY = imgY + 87;
 
-            if (isDead) {
-                ctx.strokeStyle = '#555'; ctx.lineWidth = 2.5;
-                ctx.beginPath(); ctx.moveTo(leftEyeX-3, leftEyeY-3); ctx.lineTo(leftEyeX+3, leftEyeY+3); ctx.moveTo(leftEyeX+3, leftEyeY-3); ctx.lineTo(leftEyeX-3, leftEyeY+3); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(rightEyeX-3, rightEyeY-3); ctx.lineTo(rightEyeX+3, rightEyeY+3); ctx.moveTo(rightEyeX+3, rightEyeY-3); ctx.lineTo(rightEyeX-3, rightEyeY+3); ctx.stroke();
-            } else if (isBlinking || isSick) {
-                // まぶたドット
-                ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.ellipse(leftEyeX, leftEyeY, 5, 5, 0, 0, Math.PI*2); ctx.fill();
-                ctx.beginPath(); ctx.ellipse(rightEyeX, rightEyeY, 5, 5, 0, 0, Math.PI*2); ctx.fill();
-                ctx.strokeStyle = '#d4b2b2'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(leftEyeX - 4, leftEyeY); ctx.lineTo(leftEyeX + 4, leftEyeY); ctx.stroke();
-                ctx.beginPath(); ctx.moveTo(rightEyeX - 4, rightEyeY); ctx.lineTo(rightEyeX + 4, rightEyeY); ctx.stroke();
-            }
+        if (isDead) {
+            ctx.strokeStyle = '#888'; ctx.lineWidth = 2.5;
+            ctx.beginPath(); ctx.moveTo(leftEyeX-3, leftEyeY-3); ctx.lineTo(leftEyeX+3, leftEyeY+3); ctx.moveTo(leftEyeX+3, leftEyeY-3); ctx.lineTo(leftEyeX-3, leftEyeY+3); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(rightEyeX-3, rightEyeY-3); ctx.lineTo(rightEyeX+3, rightEyeY+3); ctx.moveTo(rightEyeX+3, rightEyeY-3); ctx.lineTo(rightEyeX-3, rightEyeY+3); ctx.stroke();
+        } else if (isBlinking || isSick) {
+            // まぶた（イラストの白い毛並みと同じ白で塗りつぶし）
+            ctx.fillStyle = '#ffffff'; 
+            ctx.beginPath(); ctx.ellipse(leftEyeX, leftEyeY, 4.5, 4.5, 0, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(rightEyeX, rightEyeY, 4.5, 4.5, 0, 0, Math.PI*2); ctx.fill();
+            // 閉じたまぶたのシャドウライン
+            ctx.strokeStyle = '#e0b6b6'; ctx.lineWidth = 1.2;
+            ctx.beginPath(); ctx.moveTo(leftEyeX - 3.5, leftEyeY); ctx.lineTo(leftEyeX + 3.5, leftEyeY); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(rightEyeX - 3.5, rightEyeY); ctx.lineTo(rightEyeX + 3.5, rightEyeY); ctx.stroke();
         }
     }
 
