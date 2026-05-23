@@ -12,7 +12,6 @@
         #name-input { background: #161626; border: 1px solid #31314d; border-radius: 12px; color: #fff; padding: 12px; font-size: 14px; text-align: center; width: 220px; outline: none; }
         #name-input:focus { border-color: #ffb703; }
         .start-btn { background: linear-gradient(135deg, #ffb703, #ee9b00); color: #0d0d1a; font-weight: bold; border: none; padding: 12px 30px; border-radius: 12px; font-size: 13px; cursor: pointer; }
-
         #game-container { width: 350px; background: #161626; border: 2px solid #2d2d44; border-radius: 24px; padding: 16px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); display: flex; flex-direction: column; gap: 10px; }
         #status-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; background: #090911; padding: 10px; border-radius: 14px; font-size: 11px; border: 1px solid #1f1f33; }
         .status-item { display: flex; align-items: center; gap: 4px; }
@@ -27,16 +26,15 @@
         #dialogue-box { background: #090911; border: 1px solid #2d2d44; border-radius: 16px; padding: 12px; min-height: 60px; }
         #speaker-name { font-size: 12px; color: #ff758f; margin-bottom: 4px; font-weight: bold; letter-spacing: 1px; }
         #dialogue-text { font-size: 13px; line-height: 1.5; color: #e2e8f0; }
-
-        /* 会話モーダル */
+        #autosave-indicator { font-size: 10px; color: #3a3a5a; text-align: right; height: 14px; transition: color 0.5s; }
+        #autosave-indicator.saved { color: #4ea860; }
         #talk-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 500; justify-content: center; align-items: flex-end; padding-bottom: 20px; }
         #talk-modal.show { display: flex; }
         #talk-modal-inner { background: #161626; border: 1px solid #2d2d44; border-radius: 20px; padding: 16px; width: 340px; display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow-y: auto; }
         #talk-modal-title { font-size: 12px; color: #7788aa; margin-bottom: 4px; }
-        .modal-opt { background: #212135; color: #f1f5f9; border: 1px solid #31314d; padding: 10px 14px; border-radius: 12px; cursor: pointer; font-size: 13px; text-align: left; }
+        .modal-opt { background: #212135; color: #f1f5f9; border: 1px solid #31314d; padding: 10px 14px; border-radius: 12px; cursor: pointer; font-size: 13px; text-align: left; width: 100%; }
         .modal-opt:hover { background: #2d2d49; border-color: #4e4e75; }
-        .modal-close { background: transparent; color: #7788aa; border: 1px solid #31314d; padding: 8px; border-radius: 12px; cursor: pointer; font-size: 12px; text-align: center; }
-
+        .modal-close { background: transparent; color: #7788aa; border: 1px solid #31314d; padding: 8px; border-radius: 12px; cursor: pointer; font-size: 12px; text-align: center; width: 100%; }
         #action-area { display: flex; flex-direction: column; gap: 6px; }
         .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
         .act-btn { text-align: center; background: linear-gradient(135deg, #ffb703, #ee9b00); color: #0d0d1a; font-weight: bold; border: none; padding: 10px 6px; font-size: 12px; border-radius: 12px; cursor: pointer; }
@@ -50,14 +48,11 @@
     </style>
 </head>
 <body>
-
 <div id="intro-screen">
     <h1 class="intro-title">画面から出られない孤独なネズミを救うための、あなただけの物語</h1>
     <input type="text" id="name-input" placeholder="ネズミの名前を入力..." maxlength="8">
     <button class="start-btn" onclick="initStory()">物語を始める</button>
 </div>
-
-<!-- 会話モーダル -->
 <div id="talk-modal">
     <div id="talk-modal-inner">
         <div id="talk-modal-title">💬 何を話す？</div>
@@ -65,7 +60,6 @@
         <button class="modal-close" onclick="closeTalkModal()">✕ とじる</button>
     </div>
 </div>
-
 <div id="game-container">
     <div id="status-bar">
         <div class="status-item">🤝 なかよし: <span id="love-val" class="val">10</span></div>
@@ -82,6 +76,7 @@
         <div id="speaker-name">白ネズミ</div>
         <div id="dialogue-text">「なかよし度が増えると、ボクもっとハッピーになれるんだ！」</div>
     </div>
+    <div id="autosave-indicator">　</div>
     <div id="action-area">
         <div class="action-grid">
             <button class="act-btn talk-btn" onclick="openTalkModal()">💬 話す</button>
@@ -89,13 +84,12 @@
             <button id="cmd-water" class="act-btn water-btn" onclick="giveWater()">💧 お水</button>
             <button id="cmd-stroke" class="act-btn" onclick="strokeHead()">👋 なでなで</button>
             <button id="cmd-clean" class="act-btn clean-btn" onclick="cleanRoom()">🧹 掃除</button>
-            <button id="cmd-dummy" class="act-btn" style="background:#1a1a2e;color:#444;border:1px solid #222;cursor:default;" disabled></button>
+            <button class="act-btn" style="background:#1a1a2e;color:#444;border:1px solid #222;cursor:default;" disabled></button>
             <button id="cmd-out" class="act-btn out-btn" style="display:none;" onclick="goOutEvent()">🚶 お出かけ</button>
             <button id="cmd-med" class="act-btn med-btn" style="display:none;" onclick="giveMedicine()">💊 薬を飲ませる</button>
         </div>
     </div>
 </div>
-
 <script>
 const canvas = document.getElementById('room-canvas');
 const ctx = canvas.getContext('2d');
@@ -147,9 +141,7 @@ localStorage.setItem('nezumi_last_time', now);
 
 let nezumiState = 'normal';
 let blinkTimer = 0, isBlinking = false;
-let currentOptions = [];
 
-// 会話ツリー
 const talkTree = {
     root: [
         { text: "「今日の調子はどう？」", action: () => { addLove(3,'happy'); say('「きみに会えたから、ボクすっごく元気が出たよ！えへへ。」'); } },
@@ -180,14 +172,13 @@ function branchPlay() {
         { text: "← もどる", action: () => openTalkModal() }
     ]);
 }
-if (love >= 30) {
+if (love >= 30 && !talkTree.root.some(o => o.text.includes('ミニカー'))) {
     talkTree.root.push({ text: "「ミニカーで遊ぼう！」", action: () => { addLove(5,'happy'); say('「わーい！この赤い車、ボクの宝物なんだ！一緒に走らせると楽しいね！」'); } });
 }
 
 function openTalkModal() {
     if (isDead) return;
     showModalOptions(talkTree.root);
-    document.getElementById('talk-modal').classList.add('show');
 }
 function closeTalkModal() {
     document.getElementById('talk-modal').classList.remove('show');
@@ -222,6 +213,15 @@ function checkMilestones(oldLove, newLove) {
     if (oldLove < 60 && newLove >= 60) alert("🎉 なかよし度が60突破！【お出かけ】が解放されました！");
     if (oldLove < 100 && newLove >= 100) alert("🎉 なかよし度が100突破！【ふかふか高級ベッド】がお部屋に設置されました！");
 }
+
+// ★オートセーブ：30秒ごとに自動保存
+let autosaveTimer = setInterval(() => {
+    saveGame();
+    const el = document.getElementById('autosave-indicator');
+    el.textContent = '💾 オートセーブ完了';
+    el.classList.add('saved');
+    setTimeout(() => { el.textContent = '　'; el.classList.remove('saved'); }, 2000);
+}, 30000);
 
 setInterval(() => {
     if (isDead) return;
@@ -360,7 +360,7 @@ function drawNezumi() {
         if (blinkTimer > 114) { isBlinking = false; blinkTimer = 0; }
     }
 
-    // ★全パーツの唯一の基準座標
+    // 全パーツの基準座標
     const bx = 110;
     const by = 135 + breath;
 
@@ -379,7 +379,7 @@ function drawNezumi() {
     ctx.beginPath(); ctx.ellipse(bx+40,by+12,16,12,Math.PI/6,0,Math.PI*2); ctx.fill();
     ctx.fillStyle = '#ffccd5'; ctx.fillRect(bx+44,by+22,10,4);
 
-    // 胴体
+    // 胴体（先に描いてひげが上に来るようにする）
     let bodyColors = isSick ? ['#f0f0f5','#e1e1ed','#cbd5e1','#b8b8c7'] : ['#ffffff','#f2f2fa','#e1e1ed','#d2d2e3','#c2c2d6'];
     for (let i=0; i<36; i+=2) {
         ctx.fillStyle = bodyColors[Math.min(Math.floor(i/7),bodyColors.length-1)];
@@ -415,18 +415,27 @@ function drawNezumi() {
         ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.arc(eyeX-1,eyeY-1,1.2,0,Math.PI*2); ctx.fill();
     }
 
-    // ★鼻・ひげ → bx/byから相対計算で呼吸と完全同期
-    const hx = bx - 10;
-    const hy = by + 4;
-    ctx.fillStyle = isSick ? '#e57373' : '#ff9ebb';
-    ctx.beginPath(); ctx.ellipse(hx,hy,3,2.5,0,0,Math.PI*2); ctx.fill();
-    ctx.strokeStyle = 'rgba(70,70,90,0.5)'; ctx.lineWidth = 0.9; ctx.lineCap = 'round';
+    // ★★★ひげと鼻を最後に描く（頭・胴体より前面に来る）
+    // 頭部の先端座標をbx/byから厳密に計算
+    // 頭部ループ i=0のとき: x=bx-12, y=by-18, w=24
+    // i=23のとき(最大): x=bx-12+23*0.6≈bx-12+13.8=bx+1.8, y=by-18+23=by+5, w=24+23=47
+    // 頭の先端（左端）は i増加とともに x=bx-12+i*0.6 → 顔の左端はby+5あたりでbx+1.8
+    // 鼻の位置: 頭部の左端の少し右、顔の中ほどの高さ
+    const noseX = bx - 8;
+    const noseY = by + 2;
+
+    // ひげ（鼻より前に描いて鼻で隠す）
+    ctx.strokeStyle = 'rgba(80,80,100,0.55)'; ctx.lineWidth = 0.9; ctx.lineCap = 'round';
     let piku = isDead ? 0 : Math.sin(time/60)*0.8;
     ctx.beginPath();
-    ctx.moveTo(hx-1,hy-1); ctx.lineTo(hx-22,hy-5+piku);
-    ctx.moveTo(hx-1,hy);   ctx.lineTo(hx-22,hy+piku);
-    ctx.moveTo(hx-1,hy+1); ctx.lineTo(hx-22,hy+5-piku);
+    ctx.moveTo(noseX-2, noseY-1); ctx.lineTo(noseX-24, noseY-5+piku);
+    ctx.moveTo(noseX-2, noseY);   ctx.lineTo(noseX-24, noseY+piku);
+    ctx.moveTo(noseX-2, noseY+1); ctx.lineTo(noseX-24, noseY+5-piku);
     ctx.stroke();
+
+    // 鼻（ひげの上に重ねる）
+    ctx.fillStyle = isSick ? '#e57373' : '#ff9ebb';
+    ctx.beginPath(); ctx.ellipse(noseX, noseY, 3.5, 3, 0, 0, Math.PI*2); ctx.fill();
 
     // 前足
     if (nezumiState==='eating') {
