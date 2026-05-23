@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🐹 ねずみのほっこりルーム DX Premium</title>
+    <title><h3>🐹 ねずみのほっこりルーム DX Premium</h3></title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #0d0d1a; color: #e0e0ff; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
@@ -27,7 +27,7 @@
         #speaker-name { font-size: 12px; color: #ff758f; margin-bottom: 4px; font-weight: bold; letter-spacing: 1px; }
         #dialogue-text { font-size: 13px; line-height: 1.5; color: #e2e8f0; }
         #autosave-indicator { font-size: 10px; color: #3a3a5a; text-align: right; height: 14px; transition: color 0.5s; }
-        #autosave-indicator.saved { color: #4ea8code; color: #4ea860; }
+        #autosave-indicator.saved { color: #4ea860; }
         #talk-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 500; justify-content: center; align-items: flex-end; padding-bottom: 20px; }
         #talk-modal.show { display: flex; }
         #talk-modal-inner { background: #161626; border: 1px solid #2d2d44; border-radius: 20px; padding: 16px; width: 340px; display: flex; flex-direction: column; gap: 8px; max-height: 70vh; overflow-y: auto; }
@@ -95,14 +95,13 @@ const SAVE_KEY='nezumi_v1';
 const canvas=document.getElementById('room-canvas');
 const ctx=canvas.getContext('2d');
 
-// 💡 神様の手描きイラスト3枚を、状態に合わせて完全登録！
+// 💡 【超大修正】神様がアップロードした実際のファイル名と完全に100%一致させました！
 const IMGS = {
-    normal: (()=>{const i=new Image();i.src='nezumi_normal.jpg';return i;})(),
-    happy:  ((()=>{const i=new Image();i.src='nezumi_happy.jpg';return i;})(),
-    eating: (()=>{const i=new Image();i.src='nezumi_eating.jpg';return i;})(),
+    normal: (()=>{const i=new Image();i.src='nezumiirasuto.jpg';return i;})(),
+    happy:  ((()=>{const i=new Image();i.src='2.jpg';return i;})(),
+    eating: (()=>{const i=new Image();i.src='S__19152903.jpg';return i;})(),
 };
 
-// 状態に応じて表示する画像を完全に切り替えるシステム
 function getImg(){
     if (isDead) return IMGS.happy; // 死亡時は目を閉じている画像
     return IMGS[nezumiState] || IMGS.normal;
@@ -173,13 +172,13 @@ if(love>=30&&!talkTree.root.some(o=>o.text.includes('ミニカー'))){
 }
 function branchFood(){showModalOptions([{text:"「お肉が好きだよ」",action:()=>{addLove(3,'happy');say('「お肉！きみが元気なら嬉しいな！」');}},{text:"「甘いお菓子が好き」",action:()=>{addLove(4,'happy');say('「お菓子！クッキーのひとかけらもボクには大ごちそうなんだ！」');}},{text:"← もどる",action:()=>openTalkModal()}]);}
 function branchRoom(){showModalOptions([{text:"「ふかふかのベッドを買ってあげる」",action:()=>{addLove(5,'happy');say('「わぁっ！ふかふかで丸くなって寝たら絶対幸せだなぁ！」');}},{text:"「おもちゃの車とかどう？」",action:()=>{addLove(4,'happy');say('「おもちゃの車！お部屋を大冒険するんだね！ワクワク！」');}},{text:"← もどる",action:()=>openTalkModal()}]);}
-function branchPlay(){showModalOptions([{text:"「ゲームをして遊んでるよ」",action:()=>{addLove(5,'happy');say('「ゲーム！今ボクときみが遊んでるのもゲームなのかな？嬉しいな！」');}},{text:"「お外をのんびりお散歩してるよ」",action:()=>{addLove(4,'happy');say('「お散歩！いつかきみのポケットに入って一緒にお外を見てみたいな！」');}},{text:"← もどる",action:()=>openTalkModal()}]);}
+function branchPlay(){showModalOptions([{text:"「ゲームをして遊んでるよ</button>",action:()=>{addLove(5,'happy');say('「ゲーム！今ボクときみが遊んでるのもゲームなのかな？嬉しいな！」');}},{text:"「お外をのんびりお散歩してるよ」",action:()=>{addLove(4,'happy');say('「お散歩！いつかきみのポケットに入って一緒にお外を見てみたいな！」');}},{text:"← もどる",action:()=>openTalkModal()}]);}
 
 function openTalkModal(){if(isDead)return;showModalOptions(talkTree.root);}
 function closeTalkModal(){document.getElementById('talk-modal').classList.remove('show');}
 function showModalOptions(opts){
     const c=document.getElementById('modal-options');c.innerHTML='';
-    opts.forEach(opt=>{const btn=document.createElement('button');btn.className='modal-opt';btn.textContent=opt.text;btn.onclick=()=>{closeTalkModal();opt.action();saveGame();updateUI();};c.appendChild(btn);});
+    opts.forEach(opt=>{const btn=document.createElement('button');btn.className='modal-opt';btn.textContent=opt.text.replace('</button>','');btn.onclick=()=>{closeTalkModal();opt.action();saveGame();updateUI();};c.appendChild(btn);});
     document.getElementById('talk-modal').classList.add('show');
 }
 function say(text){document.getElementById('dialogue-text').textContent=text;}
@@ -256,9 +255,7 @@ function strokeHead(){
     saveGame();updateUI();
 }
 
-// 💡 完璧な漆黒お部屋＆神様の手描き画像完全対応エンジン
 function drawScene(){
-    // 💡 画面を完全に消去して漆黒（#000000）で塗り潰す
     ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.fillStyle='#000000';
     ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -282,7 +279,7 @@ function drawScene(){
 
     t++;
     
-    // 💡 通常時のみ、神様が用意してくれた目を閉じたイラスト（happy）を使って定期的に「リアルまばたき」させる！
+    // 💡 通常時のみ定期的にまばたきを発生させる
     if (nezumiState === 'normal' && !isDead) {
         blinkTimer++;
         if(!isBlinking && blinkTimer > 160){ isBlinking = true; blinkFrame = 0; blinkTimer = 0; }
@@ -294,7 +291,7 @@ function drawScene(){
         isBlinking = false;
     }
 
-    // 💡 呼吸の動き（上下への滑らかなゆらぎアニメーション）
+    // 呼吸の動き（滑らかなゆらぎ）
     const breathY=isDead?0:Math.sin(t/35)*1.6;
     const imgH=165,imgW=imgH*0.75;
     const imgX=(canvas.width-imgW)/2 + 10; 
@@ -304,15 +301,14 @@ function drawScene(){
     ctx.fillStyle = 'rgba(255, 255, 255, 0.04)';
     ctx.beginPath(); ctx.ellipse(imgX + (imgW/2) - 5, 172, 38, 5, 0, 0, Math.PI*2); ctx.fill();
 
-    // 💡 画像切り替え処理
     let currentImg = getImg();
     
-    // 💡 もし通常時にまばたき（目を閉じる瞬間）が発生したら、瞬時に目を閉じた画像（happy）に切り替える！
+    // まばたき（目を閉じる瞬間）は目を閉じた画像（2.jpg）にスイッチ！
     if (nezumiState === 'normal' && isBlinking) {
         currentImg = IMGS.happy;
     }
 
-    // 神様のイラストを無加工で100%美しく描画
+    // 神様のイラストを完全無加工で黒背景へ同化させて描画
     if(currentImg.complete && currentImg.naturalWidth > 0){
         ctx.drawImage(currentImg, imgX, imgY, imgW, imgH);
     }
