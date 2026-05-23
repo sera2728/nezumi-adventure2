@@ -91,7 +91,7 @@
     </div>
 </div>
 <script>
-const SAVE_KEY='nezumi_v1';
+const SAVE_KEY='nezumi_sera2728_v1';
 const canvas=document.getElementById('room-canvas');
 const ctx=canvas.getContext('2d');
 
@@ -316,7 +316,7 @@ function drawScene(){
     if(isBlinking){blinkFrame++;if(blinkFrame>8){isBlinking=false;blinkFrame=0;}}
 
     const breathY=isDead?0:Math.sin(t/50)*1.8;
-    const imgH=175,imgW=imgH*0.75;
+    const imgH=150,imgW=imgH*(4/3);
     const imgX=(canvas.width-imgW)/2;
     const imgY=10+breathY;
 
